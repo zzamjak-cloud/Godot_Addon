@@ -44,7 +44,7 @@ addons/cat_<name>/
 ```
 
 - 런타임 노드는 `class_name`으로 등록한다(플러그인을 켜지 않아도 동작해야 한다). `plugin.gd`는 인스펙터 플러그인·메뉴 등 에디터 기능만 담당한다.
-- `plugin.cfg`의 `version`, `CHANGELOG.md`, 태그 버전을 항상 같이 올린다.
+- `plugin.cfg`의 `version`, `CHANGELOG.md`, 태그 버전, 스킬 `godot-cat-addons`의 목록 버전을 항상 같이 올린다.
 
 ## 4. 코드 규칙 (GDScript)
 
@@ -72,7 +72,8 @@ addons/cat_<name>/
    - 녹화: `tools/record_showcase.sh [씬이름...]` (현재 cat_text_fx 전용. 새 애드온은 같은 구조로 `tools/record_<addon_id>.sh`를 만들거나 이 스크립트에 애드온 인자를 추가) — Godot Movie Maker(`--write-movie`, `--fixed-fps 60`)로 녹화 후 ffmpeg로 변환. 레포 창 크기와 무관하게 1280x720 임시 프로젝트에서 녹화하며, 렌더 멈춤을 막으려고 결과가 두 번 같을 때까지 재녹화한다.
    - 결과: `docs/media/<addon_id>/NN_<feature>.mp4`(H.264, 2MB 이하)와 README용 `.gif`(가로 640, 3MB 이하). 애드온 README의 기능 절마다 GIF를 넣는다.
    - 기능을 고치면 해당 영상을 다시 녹화한다. 녹화 후 프레임 몇 장을 PNG로 뽑아 직접 확인한다.
-6. **기능 소개 페이지**(GitHub Pages, `main` 브랜치 `/docs`): `docs/<addon_id>/index.html` — 단독 HTML(외부 스크립트 없음), 영상은 `../media/<addon_id>/*.mp4`를 상대 경로로 참조, 기능별 "영상 + 설명 + 주요 속성 표 + 코드 예시", 설치·원본 대응·차이 절, 공유용 OG 태그와 `og.png`(쇼케이스 대표 프레임 1200px). `docs/cat_text_fx/index.html`을 템플릿으로 쓴다. `docs/index.html` 목록과 루트 README 표에 링크를 추가한다. 공개 주소: `https://zzamjak-cloud.github.io/Godot_Addon/<addon_id>/`
+6. **에이전트용 사용법 스킬 갱신**: 다른 게임 프로젝트 세션의 에이전트는 이 레포가 아니라 공용 스킬 `godot-cat-addons`(`/Users/woody/dev/AI/zzamjak-skills/skills/godot/godot-cat-addons/`)로 사용법을 파악한다. 애드온을 추가하거나 공개 API·기본값·버전이 바뀌면 같은 작업 안에서 `SKILL.md`의 애드온 목록 표와 `references/<addon_id>.md`를 갱신하고, zzamjak-skills에서 `./scripts/validate.sh` 후 커밋·푸시한다(절차는 그 SKILL.md의 「이 스킬 갱신」).
+7. **기능 소개 페이지**(GitHub Pages, `main` 브랜치 `/docs`): `docs/<addon_id>/index.html` — 단독 HTML(외부 스크립트 없음), 영상은 `../media/<addon_id>/*.mp4`를 상대 경로로 참조, 기능별 "영상 + 설명 + 주요 속성 표 + 코드 예시", 설치·원본 대응·차이 절, 공유용 OG 태그와 `og.png`(쇼케이스 대표 프레임 1200px). `docs/cat_text_fx/index.html`을 템플릿으로 쓴다. `docs/index.html` 목록과 루트 README 표에 링크를 추가한다. 공개 주소: `https://zzamjak-cloud.github.io/Godot_Addon/<addon_id>/`
 
 ## 6. 검증
 
