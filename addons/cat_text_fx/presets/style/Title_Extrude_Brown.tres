@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CatTextStylePreset" format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_style_preset.gd" id="1_e2pq8"]
+
+[resource]
+script = ExtResource("1_e2pq8")
+description = "갈색 돌출 타이틀"
+underlay_color = Color(0.4056604, 0.16652626, 0.04018334, 1)
+underlay_dilate = 0.549
+underlay_offset_y = 0.2
+enable_shadow = true
+shadow_offset = Vector2(0, 0.03)
+shadow_alpha = 1.0

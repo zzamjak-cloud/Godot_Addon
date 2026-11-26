@@ -1,0 +1,13 @@
+# Godot
+.godot/
+.import/
+export.cfg
+export_credentials.cfg
+*.translation
+# OS / 도구
+.DS_Store
+.omc/
+.claude/worktrees/
+
+# 작업 계획안 (레포에 올리지 않음)
+Plan/

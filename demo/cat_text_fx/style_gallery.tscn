@@ -1,0 +1,449 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://demo/cat_text_fx/style_gallery.gd" id="1_0dqck"]
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text.gd" id="2_nuew3"]
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_outline.gd" id="3_6p4gy"]
+[ext_resource type="Resource" path="res://addons/cat_text_fx/presets/style/Desc_Black.tres" id="4_1hegj"]
+[ext_resource type="Resource" path="res://addons/cat_text_fx/presets/style/Desc_Black_Shadow.tres" id="5_dt068"]
+[ext_resource type="Resource" path="res://addons/cat_text_fx/presets/style/Title_Extrude_Brown.tres" id="6_eo2er"]
+[ext_resource type="Resource" path="res://addons/cat_text_fx/presets/style/Title_Out1_Purple_Shadow.tres" id="7_4bx72"]
+[ext_resource type="Resource" path="res://addons/cat_text_fx/presets/style/Title_Out2_Red_Shadow.tres" id="8_3rx4q"]
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_glow.gd" id="9_43ge5"]
+[ext_resource type="Resource" path="res://addons/cat_text_fx/presets/style/Glow_Green.tres" id="10_ge2h5"]
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_curve.gd" id="11_14hbp"]
+
+[sub_resource type="SystemFont" id="SystemFont_7lc05"]
+font_names = PackedStringArray("Apple SD Gothic Neo", "Noto Sans CJK KR", "Malgun Gothic")
+font_weight = 700
+
+[sub_resource type="Curve" id="Curve_b6yvu"]
+_limits = [-2.0, 2.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 2.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -2.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_l8jf3"]
+_limits = [-2.0, 2.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 9.424778, 9.424778, 0, 0, Vector2(0.16666667, 1), 5.7710123e-16, 5.7710123e-16, 0, 0, Vector2(0.33333334, 1.2246469e-16), -9.424778, -9.424778, 0, 0, Vector2(0.5, -1), -1.7313036e-15, -1.7313036e-15, 0, 0, Vector2(0.6666667, -2.4492937e-16), 9.424778, 9.424778, 0, 0, Vector2(0.8333333, 1), 2.885506e-15, 2.885506e-15, 0, 0, Vector2(1, 3.6739403e-16), -9.424778, -9.424778, 0, 0]
+point_count = 7
+
+[node name="StyleGallery" type="Control" unique_id=211345870]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1280.0
+offset_bottom = 720.0
+script = ExtResource("1_0dqck")
+demo_font = SubResource("SystemFont_7lc05")
+
+[node name="Background" type="ColorRect" parent="." unique_id=961781597]
+layout_mode = 0
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0.16, 0.18, 0.24, 1)
+
+[node name="Title" type="Control" parent="." unique_id=1282825622]
+anchors_preset = 0
+offset_top = 10.0
+offset_right = 1280.0
+offset_bottom = 70.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "CAT Text FX 스타일 갤러리"
+font_size = 34
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Title" unique_id=1904650933]
+script = ExtResource("3_6p4gy")
+preset = ExtResource("4_1hegj")
+underlay_dilate = 0.5
+
+[node name="Caption_Desc_Black" type="Label" parent="." unique_id=159931528]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 90.0
+offset_right = 440.0
+offset_bottom = 114.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Desc_Black"
+horizontal_alignment = 1
+
+[node name="Desc_Black" type="Control" parent="." unique_id=997442307]
+anchors_preset = 0
+offset_left = 40.0
+offset_top = 114.0
+offset_right = 440.0
+offset_bottom = 244.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "고양이 Title"
+font_size = 56
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Desc_Black" unique_id=278401252]
+script = ExtResource("3_6p4gy")
+preset = ExtResource("4_1hegj")
+underlay_dilate = 0.5
+
+[node name="Caption_Desc_Black_Shadow" type="Label" parent="." unique_id=2049129204]
+layout_mode = 0
+offset_left = 440.0
+offset_top = 90.0
+offset_right = 840.0
+offset_bottom = 114.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Desc_Black_Shadow"
+horizontal_alignment = 1
+
+[node name="Desc_Black_Shadow" type="Control" parent="." unique_id=1993912317]
+anchors_preset = 0
+offset_left = 440.0
+offset_top = 114.0
+offset_right = 840.0
+offset_bottom = 244.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "고양이 Title"
+font_size = 56
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Desc_Black_Shadow" unique_id=443532702]
+script = ExtResource("3_6p4gy")
+preset = ExtResource("5_dt068")
+underlay_dilate = 0.5
+enable_shadow = true
+shadow_offset = Vector2(0, 0.07)
+
+[node name="Caption_Title_Extrude_Brown" type="Label" parent="." unique_id=876759440]
+layout_mode = 0
+offset_left = 840.0
+offset_top = 90.0
+offset_right = 1240.0
+offset_bottom = 114.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Title_Extrude_Brown"
+horizontal_alignment = 1
+
+[node name="Title_Extrude_Brown" type="Control" parent="." unique_id=442976969]
+anchors_preset = 0
+offset_left = 840.0
+offset_top = 114.0
+offset_right = 1240.0
+offset_bottom = 244.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "고양이 Title"
+font_size = 56
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Title_Extrude_Brown" unique_id=218373775]
+script = ExtResource("3_6p4gy")
+preset = ExtResource("6_eo2er")
+underlay_color = Color(0.4056604, 0.16652626, 0.04018334, 1)
+underlay_dilate = 0.549
+underlay_offset_y = 0.2
+enable_shadow = true
+shadow_offset = Vector2(0, 0.03)
+shadow_alpha = 1.0
+
+[node name="Caption_Title_Out1_Purple_Shadow" type="Label" parent="." unique_id=1221544195]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 260.0
+offset_right = 440.0
+offset_bottom = 284.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Title_Out1_Purple_Shadow"
+horizontal_alignment = 1
+
+[node name="Title_Out1_Purple_Shadow" type="Control" parent="." unique_id=219046623]
+anchors_preset = 0
+offset_left = 40.0
+offset_top = 284.0
+offset_right = 440.0
+offset_bottom = 414.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "고양이 Title"
+font_size = 56
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Title_Out1_Purple_Shadow" unique_id=570879035]
+script = ExtResource("3_6p4gy")
+preset = ExtResource("7_4bx72")
+underlay_color = Color(0.35071266, 0, 0.43529412, 1)
+underlay_dilate = 0.5
+underlay_offset_y = 0.2
+enable_shadow = true
+shadow_offset = Vector2(0, 0.1)
+
+[node name="Caption_Title_Out2_Red_Shadow" type="Label" parent="." unique_id=868145051]
+layout_mode = 0
+offset_left = 440.0
+offset_top = 260.0
+offset_right = 840.0
+offset_bottom = 284.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Title_Out2_Red_Shadow"
+horizontal_alignment = 1
+
+[node name="Title_Out2_Red_Shadow" type="Control" parent="." unique_id=747550573]
+anchors_preset = 0
+offset_left = 440.0
+offset_top = 284.0
+offset_right = 840.0
+offset_bottom = 414.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "고양이 Title"
+font_size = 56
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Title_Out2_Red_Shadow" unique_id=1412697169]
+script = ExtResource("3_6p4gy")
+preset = ExtResource("8_3rx4q")
+underlay_color = Color(0.33962262, 0, 0, 1)
+underlay_dilate = 0.657
+enable_face = true
+face_dilate = 0.25
+enable_shadow = true
+shadow_offset = Vector2(0, 0.08)
+shadow_alpha = 0.547
+enable_second_face = true
+second_face_color = Color(1, 0.74309856, 0.16509432, 1)
+second_face_dilate = -0.063
+second_face_offset_y = -0.05
+
+[node name="Caption_Glow_Green" type="Label" parent="." unique_id=470751920]
+layout_mode = 0
+offset_left = 840.0
+offset_top = 260.0
+offset_right = 1240.0
+offset_bottom = 284.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Glow_Green"
+horizontal_alignment = 1
+
+[node name="Glow_Green" type="Control" parent="." unique_id=1006089868]
+anchors_preset = 0
+offset_left = 840.0
+offset_top = 284.0
+offset_right = 1240.0
+offset_bottom = 414.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "고양이 Title"
+font_size = 56
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Glow" type="Node" parent="Glow_Green" unique_id=682831058]
+script = ExtResource("9_43ge5")
+preset = ExtResource("10_ge2h5")
+glow_color = Color(0, 1, 0, 0.4509804)
+glow_range = 0.0
+face_dilate = 0.03
+
+[node name="Caption_외곽선_(soft)" type="Label" parent="." unique_id=676453548]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 450.0
+offset_right = 280.0
+offset_bottom = 474.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "외곽선 (soft)"
+horizontal_alignment = 1
+
+[node name="Caption_그림자" type="Label" parent="." unique_id=45147101]
+layout_mode = 0
+offset_left = 280.0
+offset_top = 450.0
+offset_right = 520.0
+offset_bottom = 474.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "그림자"
+horizontal_alignment = 1
+
+[node name="Caption_Second_Face_그라디언트" type="Label" parent="." unique_id=797853952]
+layout_mode = 0
+offset_left = 520.0
+offset_top = 450.0
+offset_right = 760.0
+offset_bottom = 474.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Second Face 그라디언트"
+horizontal_alignment = 1
+
+[node name="Caption_Glow" type="Label" parent="." unique_id=1879216363]
+layout_mode = 0
+offset_left = 760.0
+offset_top = 450.0
+offset_right = 1000.0
+offset_bottom = 474.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Glow"
+horizontal_alignment = 1
+
+[node name="Caption_Curve" type="Label" parent="." unique_id=1785794]
+layout_mode = 0
+offset_left = 1000.0
+offset_top = 450.0
+offset_right = 1240.0
+offset_bottom = 474.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+text = "Curve"
+horizontal_alignment = 1
+
+[node name="Ex_Outline" type="Control" parent="." unique_id=49217762]
+anchors_preset = 0
+offset_left = 40.0
+offset_top = 474.0
+offset_right = 280.0
+offset_bottom = 584.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "외곽선"
+font_size = 48
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Ex_Outline" unique_id=1162741797]
+script = ExtResource("3_6p4gy")
+underlay_color = Color(0.1, 0.35, 0.95, 1)
+underlay_dilate = 0.7
+underlay_softness = 0.6
+
+[node name="ShadowPanel" type="ColorRect" parent="." unique_id=1605162033]
+layout_mode = 0
+offset_left = 290.0
+offset_top = 480.0
+offset_right = 510.0
+offset_bottom = 580.0
+color = Color(0.82, 0.85, 0.9, 1)
+
+[node name="Ex_Shadow" type="Control" parent="." unique_id=283472781]
+anchors_preset = 0
+offset_left = 280.0
+offset_top = 474.0
+offset_right = 520.0
+offset_bottom = 584.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "그림자"
+font_size = 48
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Ex_Shadow" unique_id=1581149634]
+script = ExtResource("3_6p4gy")
+underlay_color = Color(0.1, 0.1, 0.2, 1)
+underlay_dilate = 0.3
+enable_shadow = true
+shadow_offset = Vector2(0.1, 0.12)
+shadow_alpha = 0.6
+
+[node name="Ex_SecondFace" type="Control" parent="." unique_id=1138801214]
+anchors_preset = 0
+offset_left = 520.0
+offset_top = 474.0
+offset_right = 760.0
+offset_bottom = 584.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "SECOND"
+font_size = 52
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Ex_SecondFace" unique_id=1453162400]
+script = ExtResource("3_6p4gy")
+underlay_color = Color(0.05, 0.05, 0.25, 1)
+underlay_dilate = 0.5
+face_dilate = 0.2
+enable_second_face = true
+use_second_face_gradient = true
+second_face_gradient_top_left = Color(1, 0.95, 0.3, 1)
+second_face_gradient_top_right = Color(1, 0.95, 0.3, 1)
+second_face_gradient_bottom_left = Color(1, 0.35, 0.1, 1)
+second_face_gradient_bottom_right = Color(1, 0.35, 0.1, 1)
+
+[node name="Ex_Glow" type="Control" parent="." unique_id=1459573506]
+anchors_preset = 0
+offset_left = 760.0
+offset_top = 474.0
+offset_right = 1000.0
+offset_bottom = 584.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "Glow 빛"
+font_size = 48
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Glow" type="Node" parent="Ex_Glow" unique_id=809416598]
+script = ExtResource("9_43ge5")
+glow_color = Color(1, 0.55, 0.1, 0.7)
+glow_range = 0.6
+inner_glow_alpha = 0.6
+
+[node name="Ex_Curve" type="Control" parent="." unique_id=937630189]
+anchors_preset = 0
+offset_left = 1000.0
+offset_top = 474.0
+offset_right = 1240.0
+offset_bottom = 614.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "곡선 텍스트 ARCH"
+font_size = 30
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Ex_Curve" unique_id=901158739]
+script = ExtResource("3_6p4gy")
+underlay_color = Color(0.3, 0.05, 0.35, 1)
+underlay_dilate = 0.5
+
+[node name="Curve" type="Node" parent="Ex_Curve" unique_id=1531299162]
+script = ExtResource("11_14hbp")
+curve = SubResource("Curve_b6yvu")
+curve_scale = 40.0
+
+[node name="Ex_Wave" type="Control" parent="." unique_id=1487719055]
+anchors_preset = 0
+offset_left = 40.0
+offset_top = 620.0
+offset_right = 1240.0
+offset_bottom = 710.0
+mouse_filter = 2
+script = ExtResource("2_nuew3")
+text = "Wave 웨이브 곡선 텍스트 예시"
+font_size = 36
+font_color = Color(0.85, 0.95, 1, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Outline" type="Node" parent="Ex_Wave" unique_id=243646580]
+script = ExtResource("3_6p4gy")
+underlay_color = Color(0, 0.2, 0.4, 1)
+underlay_dilate = 0.5
+
+[node name="Curve" type="Node" parent="Ex_Wave" unique_id=1639266950]
+script = ExtResource("11_14hbp")
+curve = SubResource("Curve_l8jf3")
+curve_scale = 10.0

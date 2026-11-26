@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CatTextStylePreset" format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_style_preset.gd" id="1_6thps"]
+
+[resource]
+script = ExtResource("1_6thps")
+effect_type = 1
+description = "초록 글로우"
+underlay_color = Color(0, 1, 0, 0.4509804)
+underlay_dilate = 0.0
+underlay_softness = 1.0
+enable_face = true
+face_dilate = 0.03

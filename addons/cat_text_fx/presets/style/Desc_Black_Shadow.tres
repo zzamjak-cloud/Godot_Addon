@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CatTextStylePreset" format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_style_preset.gd" id="1_rvfha"]
+
+[resource]
+script = ExtResource("1_rvfha")
+description = "설명문용 검정 외곽선 + 아래 그림자"
+underlay_dilate = 0.5
+enable_shadow = true
+shadow_offset = Vector2(0, 0.07)

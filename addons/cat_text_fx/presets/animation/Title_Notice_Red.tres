@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CatTextAnimationPreset" format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_animation_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+description = "제목 공지(빨강 계열) 등장: 우하단에서 날아옴"
+character_delay = 0.05
+appear_position = Vector2(200, 50)
+appear_scale = Vector2(0.5, 0.5)
+appear_duration = 0.5

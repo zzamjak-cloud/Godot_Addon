@@ -1,0 +1,132 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_mask_flow.gd" id="1_flow"]
+
+[node name="MaskFlowDemo" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="List" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CaptionLeft" type="Label" parent="Margin/List"]
+layout_mode = 2
+text = "Left (시퀀스)"
+
+[node name="FlowLeft" type="Control" parent="Margin/List"]
+custom_minimum_size = Vector2(360, 40)
+layout_mode = 2
+script = ExtResource("1_flow")
+direction = 2
+text_entries = PackedStringArray("Breaking news", "Event starts now", "Limited offer")
+
+[node name="Template" type="Label" parent="Margin/List/FlowLeft"]
+layout_mode = 2
+text = "template"
+vertical_alignment = 1
+
+[node name="CaptionRight" type="Label" parent="Margin/List"]
+layout_mode = 2
+text = "Right (시퀀스)"
+
+[node name="FlowRight" type="Control" parent="Margin/List"]
+custom_minimum_size = Vector2(360, 40)
+layout_mode = 2
+script = ExtResource("1_flow")
+direction = 3
+text_entries = PackedStringArray("Right to left no, left to right", "Second")
+
+[node name="Template" type="Label" parent="Margin/List/FlowRight"]
+layout_mode = 2
+text = "template"
+vertical_alignment = 1
+
+[node name="CaptionTop" type="Label" parent="Margin/List"]
+layout_mode = 2
+text = "Top (턴, interval 1.0)"
+
+[node name="FlowTop" type="Control" parent="Margin/List"]
+custom_minimum_size = Vector2(360, 40)
+layout_mode = 2
+script = ExtResource("1_flow")
+direction = 0
+interval = 1.0
+velocity = 60.0
+gap = 20.0
+text_entries = PackedStringArray("First line", "Second line", "Third line")
+
+[node name="Template" type="Label" parent="Margin/List/FlowTop"]
+layout_mode = 2
+text = "template"
+vertical_alignment = 1
+
+[node name="CaptionBottom" type="Label" parent="Margin/List"]
+layout_mode = 2
+text = "Bottom (턴, interval 1.0)"
+
+[node name="FlowBottom" type="Control" parent="Margin/List"]
+custom_minimum_size = Vector2(360, 40)
+layout_mode = 2
+script = ExtResource("1_flow")
+direction = 1
+interval = 1.0
+velocity = 60.0
+gap = 20.0
+text_entries = PackedStringArray("Down one", "Down two", "Down three")
+
+[node name="Template" type="Label" parent="Margin/List/FlowBottom"]
+layout_mode = 2
+text = "template"
+vertical_alignment = 1
+
+[node name="CaptionStaticFit" type="Label" parent="Margin/List"]
+layout_mode = 2
+text = "Static 짧은 텍스트 (맞으면 정지)"
+
+[node name="FlowStaticFit" type="Control" parent="Margin/List"]
+custom_minimum_size = Vector2(360, 40)
+layout_mode = 2
+script = ExtResource("1_flow")
+direction = 2
+static_mode = true
+play_on_ready = true
+
+[node name="Template" type="Label" parent="Margin/List/FlowStaticFit"]
+layout_mode = 2
+text = "Fits the mask"
+vertical_alignment = 1
+
+[node name="CaptionStaticOver" type="Label" parent="Margin/List"]
+layout_mode = 2
+text = "Static 긴 텍스트 (넘치면 흐름)"
+
+[node name="FlowStaticOver" type="Control" parent="Margin/List"]
+custom_minimum_size = Vector2(360, 40)
+layout_mode = 2
+script = ExtResource("1_flow")
+direction = 2
+static_mode = true
+play_on_ready = true
+velocity = 100.0
+
+[node name="Template" type="Label" parent="Margin/List/FlowStaticOver"]
+layout_mode = 2
+text = "This long text overflows the mask so it flows, starting aligned to the left edge"
+vertical_alignment = 1

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CatTextStylePreset" format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_style_preset.gd" id="1_by4y6"]
+
+[resource]
+script = ExtResource("1_by4y6")
+description = "빨강 이중 외곽선 타이틀 + Second Face"
+underlay_color = Color(0.33962262, 0, 0, 1)
+underlay_dilate = 0.657
+enable_face = true
+face_dilate = 0.25
+enable_shadow = true
+shadow_offset = Vector2(0, 0.08)
+shadow_alpha = 0.547
+enable_second_face = true
+second_face_color = Color(1, 0.74309856, 0.16509432, 1)
+second_face_dilate = -0.063
+second_face_offset_y = -0.05

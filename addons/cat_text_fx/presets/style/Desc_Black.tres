@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="CatTextStylePreset" format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_style_preset.gd" id="1_h82dc"]
+
+[resource]
+script = ExtResource("1_h82dc")
+description = "설명문용 검정 외곽선"
+underlay_dilate = 0.5

@@ -1,0 +1,83 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://demo/cat_text_fx/animation_demo.gd" id="1"]
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text.gd" id="2"]
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_animation.gd" id="3"]
+[ext_resource type="Resource" path="res://addons/cat_text_fx/presets/animation/Title_Notice_Red.tres" id="4"]
+[ext_resource type="Resource" path="res://addons/cat_text_fx/presets/animation/Preset_A.tres" id="5"]
+
+[node name="AnimationDemo" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="TitleText" type="Control" parent="."]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 60.0
+offset_right = 760.0
+offset_bottom = 160.0
+script = ExtResource("2")
+text = "Notice In"
+font_size = 64
+
+[node name="Animation" type="Node" parent="TitleText"]
+script = ExtResource("3")
+preset = ExtResource("4")
+enable_impact = true
+
+[node name="SubText" type="Control" parent="."]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 200.0
+offset_right = 760.0
+offset_bottom = 280.0
+script = ExtResource("2")
+text = "Curved path fly-in"
+font_size = 48
+
+[node name="Animation" type="Node" parent="SubText"]
+script = ExtResource("3")
+preset = ExtResource("5")
+
+[node name="WaveText" type="Control" parent="."]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 320.0
+offset_right = 760.0
+offset_bottom = 420.0
+script = ExtResource("2")
+text = "Wave loop"
+font_size = 56
+
+[node name="Animation" type="Node" parent="WaveText"]
+script = ExtResource("3")
+enable_appear = false
+enable_loop = true
+loop_position = Vector2(0, -30)
+loop_duration = 0.8
+loop_count = -1
+character_delay = 0.06
+
+[node name="Restart" type="Button" parent="."]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 460.0
+offset_right = 240.0
+offset_bottom = 500.0
+text = "Restart"
+
+[node name="Impact" type="Button" parent="."]
+layout_mode = 0
+offset_left = 260.0
+offset_top = 460.0
+offset_right = 420.0
+offset_bottom = 500.0
+text = "Impact"
+
+[connection signal="pressed" from="Restart" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="Impact" to="." method="_on_impact_pressed"]

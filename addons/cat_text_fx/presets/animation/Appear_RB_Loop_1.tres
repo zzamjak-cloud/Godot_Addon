@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="CatTextAnimationPreset" format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_animation_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+description = "우하단에서 등장"
+appear_position = Vector2(100, 100)

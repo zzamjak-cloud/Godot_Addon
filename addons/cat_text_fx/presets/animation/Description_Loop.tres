@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CatTextAnimationPreset" format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_animation_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+description = "설명문용 짧은 납작 등장"
+character_delay = 0.05
+appear_position = Vector2(0, 0)
+appear_scale = Vector2(1, 0.5)
+appear_rotation = -20.0
+appear_duration = 0.1

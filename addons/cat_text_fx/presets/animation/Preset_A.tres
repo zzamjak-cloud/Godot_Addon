@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CatTextAnimationPreset" format=3]
+
+[ext_resource type="Script" path="res://addons/cat_text_fx/cat_text_animation_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+description = "곡선 경로로 날아와 한 번 늘어난 뒤 좌측으로 퇴장"
+character_delay = 0.1
+appear_position = Vector2(200, 0)
+appear_scale = Vector2(1, 0.5)
+appear_rotation = 45.0
+appear_duration = 0.3
+appear_ease = 9
+appear_use_position_curve = true
+appear_position_curve_offset = Vector2(0, -100)
+enable_loop = true
+loop_position = Vector2(0, 0)
+loop_scale = Vector2(1, 1.3)
+loop_duration = 1.4
+loop_count = 1
+loop_type = 0
+enable_disappear = true
+disappear_position = Vector2(-200, 0)
+disappear_rotation = 30.0
+disappear_ease = 8
+disappear_use_position_curve = true
+disappear_position_curve_offset = Vector2(0, 100)
