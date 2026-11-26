@@ -8,6 +8,8 @@ Unity용 [TMPEffect](https://github.com/zzamjak-cloud/TMPEffect) 패키지를 Go
 
 ![overview](../../docs/media/cat_text_fx/15_combo.gif)
 
+기능별 시연 영상과 사용법: **[기능 소개 페이지](https://zzamjak-cloud.github.io/Godot_Addon/cat_text_fx/)**
+
 ## 설치
 
 `addons/cat_core`, `addons/cat_text_fx` 폴더를 프로젝트의 `addons/`에 복사합니다. 설치 도구를 쓰는 방법은 [루트 README](../../README.md#설치)를 보세요.

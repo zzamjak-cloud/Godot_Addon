@@ -7,7 +7,7 @@ Unity용으로 만든 CAT 패키지들을 Godot 4.7+ 애드온으로 옮겨 모�
 | 애드온 | 버전 | 설명 | 원본 (Unity) |
 |---|---|---|---|
 | [cat_core](addons/cat_core/README.md) | 1.0.0 | 공용 코드(이징 31종) | — |
-| [cat_text_fx](addons/cat_text_fx/README.md) | 1.0.0 | 텍스트 외곽선·글로우·곡선·글자 애니메이션·마스크 흐름 | [TMPEffect](https://github.com/zzamjak-cloud/TMPEffect) |
+| [cat_text_fx](addons/cat_text_fx/README.md) · [기능 소개 페이지](https://zzamjak-cloud.github.io/Godot_Addon/cat_text_fx/) | 1.0.0 | 텍스트 외곽선·글로우·곡선·글자 애니메이션·마스크 흐름 | [TMPEffect](https://github.com/zzamjak-cloud/TMPEffect) |
 
 ## 설치
 

@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Godot 4.7+ 텍스트 연출 애드온 — 외곽선, 그림자, 글로우, 곡선 배치, 글자별 등장·퇴장 애니메이션. 기능별 시연 영상과 사용법.">
+<meta property="og:title" content="CAT Text FX — Godot 텍스트 연출 애드온">
+<meta property="og:description" content="외곽선·그림자·글로우·곡선·글자 애니메이션을 노드 하나로. Unity TMPEffect를 Godot으로 옮긴 MIT 애드온.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://zzamjak-cloud.github.io/Godot_Addon/cat_text_fx/og.png">
+<meta property="og:url" content="https://zzamjak-cloud.github.io/Godot_Addon/cat_text_fx/">
+<meta name="twitter:card" content="summary_large_image">
+<style>*,*::before,*::after{box-sizing:border-box}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>CAT Text FX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* 레이아웃: 게임 화면 같은 짙은 남색 무대 위에, 기능마다 "영상 + 설명 카드"를 좌우로 놓고 폰에서는 세로로 쌓는다. 단일 다크 룩(영상 배경과 맞춤). */
+:root {
+  --stage: #161a26;
+  --panel: #1f2434;
+  --panel-2: #262c3f;
+  --line: #333a52;
+  --ink: #eef0f7;
+  --ink-soft: #a9b0c6;
+  --amber: #ffb13b;
+  --amber-ink: #1a1306;
+  --sky: #8fd3ff;
+  --f-display: "Black Han Sans", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --f-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 14px;
+  color-scheme: dark;
+}
+html { background: var(--stage); }
+body { background: var(--stage); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.7; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--stage); }
+a { color: var(--sky); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* 히어로 */
+.hero { padding-block: 56px 40px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 40px; align-items: center; }
+.eyebrow { font-family: var(--f-mono); font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--amber); margin: 0 0 14px; }
+.hero h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(44px, 7vw, 76px); line-height: 1.02; margin: 0 0 18px; letter-spacing: -.01em; text-wrap: balance;
+  text-shadow: 0 0 0 transparent, 3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 28px rgba(255,177,59,.35); }
+.hero h1 .hl { color: var(--amber); }
+.hero p.lead { color: var(--ink-soft); font-size: 17px; max-width: 34em; margin: 0 0 22px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; padding: 0; list-style: none; }
+.meta li { font-family: var(--f-mono); font-size: 12.5px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft); }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; font-weight: 700; font-size: 15px; text-decoration: none; }
+.btn.primary { background: var(--amber); color: var(--amber-ink); }
+.btn.ghost { border: 1px solid var(--line); color: var(--ink); }
+.hero-video { border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: #000; box-shadow: 0 30px 60px -30px rgba(0,0,0,.8); }
+video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; max-width: 100%; background: #10131c; }
+
+/* 목차 */
+.toc { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--stage) 92%, transparent); backdrop-filter: blur(8px); border-block: 1px solid var(--line); }
+.toc .wrap { display: flex; gap: 6px; overflow-x: auto; padding-block: 10px; scrollbar-width: none; }
+.toc a { flex: none; font-size: 14px; color: var(--ink-soft); text-decoration: none; padding: 5px 12px; border-radius: 999px; }
+.toc a:hover { color: var(--ink); background: var(--panel); }
+.toc a.group { color: var(--amber); font-weight: 700; }
+
+/* 그룹 + 기능 */
+main { padding-block: 8px 40px; }
+.group-head { padding-block: 56px 8px; display: grid; gap: 6px; }
+.group-head h2 { font-family: var(--f-display); font-weight: 400; font-size: clamp(30px, 4.4vw, 42px); margin: 0; line-height: 1.15; }
+.group-head p { color: var(--ink-soft); margin: 0; max-width: 46em; }
+.feature { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; align-items: start; padding-block: 28px; border-top: 1px solid var(--line); scroll-margin-top: 64px; }
+.feature:first-of-type { border-top: 0; }
+.feature .media { border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: #000; }
+.feature h3 { font-size: 22px; margin: 0 0 4px; line-height: 1.35; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.feature h3 code { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--sky); background: var(--panel); padding: 2px 8px; border-radius: 6px; }
+.feature .desc { color: var(--ink-soft); margin: 0 0 14px; }
+.props { width: 100%; border-collapse: collapse; font-size: 14px; margin: 0 0 14px; }
+.props th, .props td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.props th { font-family: var(--f-mono); font-weight: 600; color: var(--ink); white-space: nowrap; font-size: 13px; }
+.props td { color: var(--ink-soft); }
+.table-scroll { overflow-x: auto; }
+pre { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-family: var(--f-mono); font-size: 13px; line-height: 1.6; color: var(--ink); }
+pre .k { color: #ff9e7a; } pre .s { color: #b8e986; } pre .c { color: #7c849c; } pre .f { color: var(--sky); }
+.note { font-size: 13.5px; color: var(--ink-soft); margin: 10px 0 0; padding-left: 12px; border-left: 2px solid var(--line); }
+
+/* 설치 · 차이 */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding-block: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 22px; min-width: 0; }
+.box h3 { margin: 0 0 10px; font-size: 19px; }
+.box ul { margin: 0; padding-left: 1.1em; color: var(--ink-soft); }
+.box li + li { margin-top: 6px; }
+.box p { color: var(--ink-soft); margin: 0 0 12px; }
+.copy { margin-top: 10px; font: 600 13px var(--f-body); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.map { width: 100%; border-collapse: collapse; font-size: 14px; }
+.map td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.map td:first-child { font-family: var(--f-mono); color: var(--ink-soft); font-size: 13px; }
+.map td:last-child { font-family: var(--f-mono); color: var(--sky); font-size: 13px; }
+footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var(--ink-soft); font-size: 14px; }
+
+@media (max-width: 860px) {
+  .hero, .feature, .split { grid-template-columns: minmax(0, 1fr); }
+  .hero { padding-block: 32px 28px; gap: 24px; }
+  .feature { gap: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+html { scroll-behavior: smooth; }
+</style>
+</head>
+<body>
+
+<header class="wrap hero">
+  <div>
+    <p class="eyebrow">Godot 4.7+ Addon · GDScript · MIT</p>
+    <h1>CAT <span class="hl">Text FX</span></h1>
+    <p class="lead">Godot 게임 UI 텍스트에 외곽선, 그림자, 글로우, 곡선 배치, 글자별 등장·퇴장 애니메이션을 붙이는 애드온입니다. Unity TextMeshPro용으로 쓰던 TMPEffect를 Godot으로 옮겼고, 노드를 붙이고 인스펙터 값만 바꾸면 됩니다.</p>
+    <ul class="meta">
+      <li>Label 대체 노드 CatText</li>
+      <li>효과 노드 6종</li>
+      <li>번들 프리셋 10종</li>
+      <li>모바일 렌더러 지원</li>
+    </ul>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/zzamjak-cloud/Godot_Addon" target="_blank" rel="noopener">GitHub에서 받기</a>
+      <a class="btn ghost" href="#install">설치 방법</a>
+    </div>
+  </div>
+  <div class="hero-video">
+    <video src="../media/cat_text_fx/15_combo.mp4" autoplay muted loop playsinline preload="auto" aria-label="외곽선, 곡선, 애니메이션, 임팩트를 함께 적용한 시연 영상"></video>
+  </div>
+</header>
+
+<nav class="toc" aria-label="기능 목차">
+  <div class="wrap">
+    <a class="group" href="#style">스타일</a>
+    <a href="#outline">외곽선</a><a href="#shadow">그림자</a><a href="#second-face">안쪽 면</a><a href="#glow">글로우</a><a href="#style-presets">스타일 프리셋</a>
+    <a class="group" href="#placement">배치</a>
+    <a href="#curve">곡선</a>
+    <a class="group" href="#motion">애니메이션</a>
+    <a href="#appear">등장</a><a href="#loop">반복</a><a href="#disappear">퇴장</a><a href="#full">전체 시퀀스</a><a href="#impact">임팩트</a><a href="#anim-presets">애니메이션 프리셋</a>
+    <a class="group" href="#layout">레이아웃</a>
+    <a href="#mask-flow">전광판 흐름</a><a href="#limiter">최대 크기 제한</a>
+    <a class="group" href="#install">설치</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section id="style" aria-labelledby="style-h">
+    <div class="group-head">
+      <h2 id="style-h">스타일</h2>
+      <p><code>CatText</code> 아래에 <code>CatTextOutline</code>이나 <code>CatTextGlow</code>를 자식으로 붙입니다. 그리는 순서는 뒤에서 앞으로 그림자, 글로우 번짐, 외곽선, 본문, 안쪽 면, 안쪽 글로우입니다.</p>
+    </div>
+
+    <article class="feature" id="outline">
+      <div class="media"><video src="../media/cat_text_fx/01_outline.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="외곽선 두께, 소프트니스, 색 변화 시연"></video></div>
+      <div>
+        <h3>외곽선 <code>CatTextOutline</code></h3>
+        <p class="desc">글자 바깥에 두께와 색을 가진 테두리를 둘러 밝은 배경에서도 읽히게 합니다. 소프트니스를 올리면 가장자리가 부드럽게 번집니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>underlay_color</th><td>외곽선 색</td></tr>
+          <tr><th>underlay_dilate</th><td>두께 0~1 (기본 0.15)</td></tr>
+          <tr><th>underlay_softness</th><td>가장자리 번짐 0~1</td></tr>
+          <tr><th>face_dilate</th><td>본문 글자 굵기 0~1</td></tr>
+        </table></div>
+<pre><span class="k">var</span> outline := <span class="f">CatTextOutline</span>.new()
+outline.<span class="f">set_outline</span>(Color.BLACK, <span class="s">0.3</span>)
+label.add_child(outline)</pre>
+      </div>
+    </article>
+
+    <article class="feature" id="shadow">
+      <div class="media"><video src="../media/cat_text_fx/02_shadow.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="드롭 섀도와 그림자 시연"></video></div>
+      <div>
+        <h3>그림자 <code>CatTextOutline</code></h3>
+        <p class="desc">두 가지 그림자를 씁니다. 외곽선을 한쪽으로 밀면 입체감 있는 드롭 섀도가 되고, Shadow를 켜면 외곽선까지 포함한 글자 실루엣이 반투명하게 하나 더 깔립니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>underlay_offset_x / y</th><td>외곽선을 밀어 만드는 드롭 섀도 (-1~1)</td></tr>
+          <tr><th>enable_shadow</th><td>실루엣 그림자 켜기</td></tr>
+          <tr><th>shadow_offset</th><td>글자 크기 대비 이동량 (기본 0.1, 0.1)</td></tr>
+          <tr><th>shadow_alpha</th><td>그림자 진하기 0~1</td></tr>
+        </table></div>
+<pre>outline.<span class="f">set_outline_with_shadow</span>(Color.BLACK, <span class="s">0.3</span>, <span class="s">0.5</span>, Vector2(<span class="s">0.08</span>, <span class="s">0.08</span>))</pre>
+      </div>
+    </article>
+
+    <article class="feature" id="second-face">
+      <div class="media"><video src="../media/cat_text_fx/03_second_face.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="안쪽 면 단색과 그라디언트 시연"></video></div>
+      <div>
+        <h3>안쪽 면 <code>Second Face</code></h3>
+        <p class="desc">글자 안쪽에 한 겹 작은 면을 다른 색으로 그려, 타이틀 로고처럼 테두리가 두 겹인 느낌을 냅니다. 단색이나 네 모서리 그라디언트를 쓸 수 있습니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>enable_second_face</th><td>안쪽 면 켜기</td></tr>
+          <tr><th>second_face_color</th><td>안쪽 면 색</td></tr>
+          <tr><th>use_second_face_gradient</th><td>네 모서리 그라디언트 사용</td></tr>
+          <tr><th>second_face_dilate</th><td>안쪽으로 줄이는 양 -1~0 (기본 -0.1)</td></tr>
+        </table></div>
+        <p class="note">그라디언트는 글자마다가 아니라 텍스트 전체 영역 기준으로 섞입니다.</p>
+      </div>
+    </article>
+
+    <article class="feature" id="glow">
+      <div class="media"><video src="../media/cat_text_fx/04_glow.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="글로우 색 변화와 안쪽 글로우 시연"></video></div>
+      <div>
+        <h3>글로우 <code>CatTextGlow</code></h3>
+        <p class="desc">글자 주변으로 빛이 번지는 효과입니다. 본문 색도 글로우 색을 따라가서 네온사인처럼 보입니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>glow_color</th><td>빛 색과 세기 (RGBA)</td></tr>
+          <tr><th>glow_range</th><td>번지는 범위 0~1</td></tr>
+          <tr><th>inner_glow_alpha</th><td>글자 위에 겹치는 안쪽 빛 0~1</td></tr>
+        </table></div>
+<pre><span class="k">var</span> glow := <span class="f">CatTextGlow</span>.new()
+glow.<span class="f">set_glow</span>(Color(<span class="s">1</span>, <span class="s">0.6</span>, <span class="s">0.1</span>, <span class="s">0.6</span>), <span class="s">0.4</span>)
+label.add_child(glow)</pre>
+      </div>
+    </article>
+
+    <article class="feature" id="style-presets">
+      <div class="media"><video src="../media/cat_text_fx/12_style_presets.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="번들 스타일 프리셋 6종 시연"></video></div>
+      <div>
+        <h3>스타일 프리셋 <code>CatTextStylePreset</code></h3>
+        <p class="desc">외곽선·그림자·안쪽 면·글로우 설정을 <code>.tres</code> 파일 하나로 저장해 여러 텍스트에 같은 스타일을 씁니다. 인스펙터의 <strong>새 프리셋으로 저장</strong> 버튼으로 현재 값을 바로 저장할 수 있습니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>설명용</th><td>Desc_Black, Desc_Black_Shadow</td></tr>
+          <tr><th>타이틀용</th><td>Title_Extrude_Brown, Title_Out1_Purple_Shadow, Title_Out2_Red_Shadow</td></tr>
+          <tr><th>글로우</th><td>Glow_Green</td></tr>
+        </table></div>
+<pre>outline.<span class="f">apply_preset</span>(<span class="f">load</span>(<span class="s">"res://addons/cat_text_fx/presets/style/Title_Out2_Red_Shadow.tres"</span>))</pre>
+      </div>
+    </article>
+  </section>
+
+  <section id="placement" aria-labelledby="placement-h">
+    <div class="group-head">
+      <h2 id="placement-h">배치</h2>
+      <p>글자를 직선이 아닌 곡선 위에 놓습니다. 애니메이션과 함께 쓰면 애니메이션이 먼저, 곡선이 나중에 적용됩니다.</p>
+    </div>
+
+    <article class="feature" id="curve">
+      <div class="media"><video src="../media/cat_text_fx/05_curve.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="아치, 웨이브 곡선과 세기 변화 시연"></video></div>
+      <div>
+        <h3>곡선 <code>CatTextCurve</code></h3>
+        <p class="desc">Godot의 Curve 리소스로 텍스트 모양을 그립니다. 가로축은 텍스트 왼쪽에서 오른쪽(0~1), 세로축은 높이입니다. 기울기를 따라 글자를 돌릴 수 있고, 글자 수나 폰트 크기가 바뀌어도 곡선 세기가 자동으로 맞춰집니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>curve</th><td>곡선 모양 (비워 두면 평평)</td></tr>
+          <tr><th>curve_scale</th><td>곡선 높이(px)</td></tr>
+          <tr><th>rotate_along_curve</th><td>기울기 방향으로 글자 회전</td></tr>
+          <tr><th>enable_dynamic_curve_scale</th><td>글자 수·크기에 따라 세기 자동 보정</td></tr>
+        </table></div>
+<pre><span class="k">var</span> curve := <span class="f">CatTextCurve</span>.new()
+label.add_child(curve)
+curve.<span class="f">set_arch_curve</span>(<span class="s">40</span>)        <span class="c"># 아치</span>
+curve.<span class="f">set_wave_curve</span>(<span class="s">18</span>, <span class="s">2</span>)     <span class="c"># 물결 2번</span></pre>
+      </div>
+    </article>
+  </section>
+
+  <section id="motion" aria-labelledby="motion-h">
+    <div class="group-head">
+      <h2 id="motion-h">애니메이션</h2>
+      <p><code>CatTextAnimation</code> 하나로 등장, 반복, 퇴장을 이어서 재생합니다. 글자마다 시작 시각이 <code>character_delay</code>만큼 밀려 한 글자씩 움직이고, 이징은 31종 중에서 고르거나 Curve로 직접 그립니다. 에디터에서는 인스펙터의 <strong>미리보기 재생</strong> 버튼으로 실행 없이 확인합니다.</p>
+    </div>
+
+    <article class="feature" id="appear">
+      <div class="media"><video src="../media/cat_text_fx/06_anim_appear.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="글자별 등장 애니메이션 시연"></video></div>
+      <div>
+        <h3>등장 <code>Appear</code></h3>
+        <p class="desc">글자가 지정한 위치·크기·회전·투명도에서 출발해 제자리로 들어옵니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>appear_position</th><td>출발 위치 (기본 위쪽 50px)</td></tr>
+          <tr><th>appear_scale / rotation / alpha</th><td>출발 크기·회전(도)·투명도</td></tr>
+          <tr><th>appear_duration</th><td>글자 하나가 들어오는 시간</td></tr>
+          <tr><th>appear_ease</th><td>이징 (기본 OUT_BACK)</td></tr>
+        </table></div>
+      </div>
+    </article>
+
+    <article class="feature" id="loop">
+      <div class="media"><video src="../media/cat_text_fx/07_anim_loop.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="Yoyo와 Restart 반복 비교 시연"></video></div>
+      <div>
+        <h3>반복 <code>Loop</code></h3>
+        <p class="desc">등장 후 글자가 계속 출렁이거나 커졌다 작아집니다. YOYO는 갔다가 되돌아오고, RESTART는 처음으로 돌아가 다시 시작합니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>loop_position / scale / rotation</th><td>반복 중 움직임 폭</td></tr>
+          <tr><th>loop_duration</th><td>한 방향 시간</td></tr>
+          <tr><th>loop_count</th><td>반복 횟수 (-1 = 무한)</td></tr>
+          <tr><th>loop_type</th><td>YOYO / RESTART</td></tr>
+        </table></div>
+      </div>
+    </article>
+
+    <article class="feature" id="disappear">
+      <div class="media"><video src="../media/cat_text_fx/08_anim_disappear.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="글자별 퇴장 애니메이션 시연"></video></div>
+      <div>
+        <h3>퇴장 <code>Disappear</code></h3>
+        <p class="desc">글자가 한 글자씩 지정한 상태로 빠져나갑니다. 끝나면 <code>animation_finished</code> 신호가 와서 다음 연출을 이어 붙이기 쉽습니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>disappear_position / scale / alpha</th><td>도착 상태</td></tr>
+          <tr><th>disappear_duration</th><td>글자 하나가 나가는 시간</td></tr>
+          <tr><th>disappear_ease</th><td>이징 (기본 IN_BACK)</td></tr>
+        </table></div>
+<pre><span class="k">await</span> anim.animation_finished
+label.queue_free()</pre>
+      </div>
+    </article>
+
+    <article class="feature" id="full">
+      <div class="media"><video src="../media/cat_text_fx/09_anim_full.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="등장, 반복, 퇴장을 블렌드로 이은 전체 시퀀스 시연"></video></div>
+      <div>
+        <h3>전체 시퀀스 <code>Blend</code></h3>
+        <p class="desc">등장 → 반복 → 퇴장을 한 번에 재생합니다. 블렌드 값을 주면 다음 단계가 조금 일찍 시작해 단계 사이가 끊기지 않고 자연스럽게 이어집니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>appear_to_loop_blend</th><td>등장→반복 겹침 0~0.5</td></tr>
+          <tr><th>loop_to_disappear_blend</th><td>반복→퇴장 겹침 0~0.5</td></tr>
+          <tr><th>character_delay</th><td>글자 간 시작 간격(초)</td></tr>
+          <tr><th>pivot</th><td>회전·확대 기준점 (0.5, 0) = 가운데 아래</td></tr>
+        </table></div>
+      </div>
+    </article>
+
+    <article class="feature" id="impact">
+      <div class="media"><video src="../media/cat_text_fx/10_anim_impact.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="반복 중 임팩트를 여러 번 주는 시연"></video></div>
+      <div>
+        <h3>임팩트 <code>trigger_impact()</code></h3>
+        <p class="desc">점수 획득, 콤보처럼 순간적으로 강조할 때 씁니다. 재생 중인 애니메이션 위에 덧씌워져 글자가 잠깐 커졌다가 돌아옵니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>impact_scale</th><td>최대 확대 배율 (기본 1.2)</td></tr>
+          <tr><th>impact_position / rotation</th><td>순간 이동·기울기</td></tr>
+          <tr><th>impact_duration</th><td>커졌다 돌아오는 전체 시간</td></tr>
+          <tr><th>impact_character_delay</th><td>글자 간 파도 간격</td></tr>
+        </table></div>
+<pre><span class="k">func</span> <span class="f">_on_score_changed</span>(v):
+    score_label.text = str(v)
+    score_anim.<span class="f">trigger_impact</span>()</pre>
+      </div>
+    </article>
+
+    <article class="feature" id="anim-presets">
+      <div class="media"><video src="../media/cat_text_fx/11_anim_presets.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="애니메이션 프리셋을 차례로 적용한 시연"></video></div>
+      <div>
+        <h3>애니메이션 프리셋 <code>CatTextAnimationPreset</code></h3>
+        <p class="desc">자주 쓰는 움직임을 파일이나 코드 한 줄로 적용합니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>번들 .tres</th><td>Title_Notice_Red, Appear_RB_Loop_1, Preset_A, Description_Loop</td></tr>
+          <tr><th>코드 팩토리</th><td>bounce_appear, wave_loop, scale_disappear, rotate_appear, fade_in_out</td></tr>
+        </table></div>
+<pre>anim.<span class="f">apply_preset</span>(<span class="f">CatTextAnimationPreset</span>.<span class="f">create_wave_loop</span>())</pre>
+      </div>
+    </article>
+  </section>
+
+  <section id="layout" aria-labelledby="layout-h">
+    <div class="group-head">
+      <h2 id="layout-h">레이아웃</h2>
+      <p>아래 두 노드는 <code>CatText</code>뿐 아니라 이미 쓰고 있는 일반 <code>Label</code>에도 붙일 수 있습니다.</p>
+    </div>
+
+    <article class="feature" id="mask-flow">
+      <div class="media"><video src="../media/cat_text_fx/13_mask_flow.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="네 방향 전광판 흐름과 static 모드 시연"></video></div>
+      <div>
+        <h3>전광판 흐름 <code>CatMaskFlow</code></h3>
+        <p class="desc">정해진 영역 안에서 텍스트가 흐릅니다. 왼쪽·오른쪽은 문구가 이어진 띠로 계속 흐르고, 위·아래는 한 줄씩 교체됩니다. static 모드에서는 영역에 들어가는 짧은 문구는 멈춰 있고 넘치는 문구만 흐릅니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>direction</th><td>LEFT / RIGHT / TOP / BOTTOM</td></tr>
+          <tr><th>velocity · gap</th><td>속도(px/s) · 문구 사이 간격</td></tr>
+          <tr><th>interval</th><td>위·아래 교체 후 대기 시간</td></tr>
+          <tr><th>static_mode</th><td>넘칠 때만 흐름</td></tr>
+          <tr><th>text_entries</th><td>차례로 보여줄 문구(번역 키 가능)</td></tr>
+        </table></div>
+        <p class="note">사용법: CatMaskFlow를 만들고 첫 번째 자식으로 Label이나 CatText를 넣습니다. 복제본은 씬 파일에 저장되지 않습니다.</p>
+      </div>
+    </article>
+
+    <article class="feature" id="limiter">
+      <div class="media"><video src="../media/cat_text_fx/14_layout_limiter.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="텍스트가 늘어나다 최대 폭에서 줄바꿈되는 시연"></video></div>
+      <div>
+        <h3>최대 크기 제한 <code>CatLayoutLimiter</code></h3>
+        <p class="desc">짧은 문구는 자연스러운 폭을 유지하고, 최대 폭에 닿으면 그때부터 줄바꿈합니다. 말풍선이나 툴팁처럼 길이가 들쭉날쭉한 문구에 맞습니다. 번역문 길이를 기준으로 판단합니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>max_width</th><td>이 폭에 닿으면 줄바꿈 (기본 300)</td></tr>
+          <tr><th>max_height</th><td>이 높이에 닿으면 고정하고 잘라냄 (0 = 제한 없음)</td></tr>
+        </table></div>
+      </div>
+    </article>
+  </section>
+
+  <section id="install" aria-labelledby="install-h">
+    <div class="group-head">
+      <h2 id="install-h">설치</h2>
+      <p><code>addons/cat_core</code>와 <code>addons/cat_text_fx</code> 두 폴더만 있으면 됩니다. 노드는 class_name으로 등록되어 플러그인을 켜지 않아도 노드 추가 목록에 나타납니다.</p>
+    </div>
+    <div class="split">
+      <div class="box">
+        <h3>폴더 복사</h3>
+        <p>GitHub 레포에서 두 폴더를 받아 프로젝트의 <code>addons/</code>에 넣습니다.</p>
+<pre>your_project/
+└─ addons/
+   ├─ cat_core/
+   └─ cat_text_fx/</pre>
+      </div>
+      <div class="box">
+        <h3>GodotEnv로 버전 고정</h3>
+        <p>프로젝트에 <code>addons.json</code>을 만들고 <code>godotenv addons install</code>을 실행합니다.</p>
+<pre id="addons-json">{
+  "path": "addons",
+  "addons": {
+    "cat_core": { "url": "https://github.com/zzamjak-cloud/Godot_Addon.git",
+      "checkout": "cat_core/v1.0.0", "subfolder": "addons/cat_core" },
+    "cat_text_fx": { "url": "https://github.com/zzamjak-cloud/Godot_Addon.git",
+      "checkout": "cat_text_fx/v1.0.0", "subfolder": "addons/cat_text_fx" }
+  }
+}</pre>
+        <button class="copy" id="copy-json" type="button">addons.json 복사</button>
+      </div>
+    </div>
+    <div class="split">
+      <div class="box">
+        <h3>Unity TMPEffect에서 옮겨 올 때</h3>
+        <div class="table-scroll"><table class="map">
+          <tr><td>TextMeshProUGUI</td><td>CatText</td></tr>
+          <tr><td>TMPOutlineEffect</td><td>CatTextOutline</td></tr>
+          <tr><td>TMPOutGlow</td><td>CatTextGlow</td></tr>
+          <tr><td>TMPCurve</td><td>CatTextCurve</td></tr>
+          <tr><td>TMPAnimation</td><td>CatTextAnimation</td></tr>
+          <tr><td>TMPMaskFlow</td><td>CatMaskFlow</td></tr>
+          <tr><td>TMPLayoutLimiter</td><td>CatLayoutLimiter</td></tr>
+        </table></div>
+      </div>
+      <div class="box">
+        <h3>원본과 다른 점</h3>
+        <ul>
+          <li>SDF 셰이더 대신 테두리를 여러 겹 그려 외곽선과 번짐을 만들어서, 두께 느낌이 조금 다를 수 있습니다.</li>
+          <li>회전은 z축만 지원합니다.</li>
+          <li>OutBack처럼 튀어 나가는 이징이 실제로 튑니다. 원본처럼 자르려면 <code>clamp_overshoot</code>를 켭니다.</li>
+          <li>Godot은 y축이 아래쪽이라 위치·회전 값의 부호가 원본 프리셋과 반대입니다. 번들 프리셋은 이미 변환되어 있습니다.</li>
+          <li>원본에 없던 신호 <code>animation_finished</code>, <code>impact_finished</code>, <code>turn_changed</code>를 추가했습니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">CAT Text FX 1.0.0 · Godot 4.7+ · MIT License · <a href="https://github.com/zzamjak-cloud/Godot_Addon" target="_blank" rel="noopener">github.com/zzamjak-cloud/Godot_Addon</a></div>
+</footer>
+
+<script>
+(() => {
+  // 화면에 보이는 영상만 재생해 휴대폰에서도 가볍게 유지한다.
+  const vids = document.querySelectorAll('main video');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if ('IntersectionObserver' in window && !reduce) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const v = e.target;
+        if (e.isIntersecting) { v.play().catch(() => {}); } else { v.pause(); }
+      }
+    }, { threshold: 0.35 });
+    vids.forEach((v) => io.observe(v));
+  } else {
+    vids.forEach((v) => { v.controls = true; });
+  }
+  if (reduce) {
+    const hero = document.querySelector('.hero-video video');
+    hero.removeAttribute('autoplay'); hero.pause(); hero.controls = true;
+  }
+  const btn = document.getElementById('copy-json');
+  btn.addEventListener('click', () => {
+    const text = document.getElementById('addons-json').textContent;
+    const done = () => { btn.textContent = '복사됨'; setTimeout(() => { btn.textContent = 'addons.json 복사'; }, 1600); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => selectFallback());
+    } else { selectFallback(); }
+    function selectFallback() {
+      const r = document.createRange(); r.selectNodeContents(document.getElementById('addons-json'));
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = '선택됨 — Ctrl/⌘+C';
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

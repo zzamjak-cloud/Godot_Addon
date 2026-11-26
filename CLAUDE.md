@@ -72,6 +72,7 @@ addons/cat_<name>/
    - 녹화: `tools/record_showcase.sh [씬이름...]` (현재 cat_text_fx 전용. 새 애드온은 같은 구조로 `tools/record_<addon_id>.sh`를 만들거나 이 스크립트에 애드온 인자를 추가) — Godot Movie Maker(`--write-movie`, `--fixed-fps 60`)로 녹화 후 ffmpeg로 변환. 레포 창 크기와 무관하게 1280x720 임시 프로젝트에서 녹화하며, 렌더 멈춤을 막으려고 결과가 두 번 같을 때까지 재녹화한다.
    - 결과: `docs/media/<addon_id>/NN_<feature>.mp4`(H.264, 2MB 이하)와 README용 `.gif`(가로 640, 3MB 이하). 애드온 README의 기능 절마다 GIF를 넣는다.
    - 기능을 고치면 해당 영상을 다시 녹화한다. 녹화 후 프레임 몇 장을 PNG로 뽑아 직접 확인한다.
+6. **기능 소개 페이지**(GitHub Pages, `main` 브랜치 `/docs`): `docs/<addon_id>/index.html` — 단독 HTML(외부 스크립트 없음), 영상은 `../media/<addon_id>/*.mp4`를 상대 경로로 참조, 기능별 "영상 + 설명 + 주요 속성 표 + 코드 예시", 설치·원본 대응·차이 절, 공유용 OG 태그와 `og.png`(쇼케이스 대표 프레임 1200px). `docs/cat_text_fx/index.html`을 템플릿으로 쓴다. `docs/index.html` 목록과 루트 README 표에 링크를 추가한다. 공개 주소: `https://zzamjak-cloud.github.io/Godot_Addon/<addon_id>/`
 
 ## 6. 검증
 
