@@ -11,7 +11,7 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/cat_core/plugin.cfg", "res://addons/cat_text_fx/plugin.cfg")
+enabled=PackedStringArray("res://addons/cat_core/plugin.cfg", "res://addons/cat_ocean_flow/plugin.cfg", "res://addons/cat_text_fx/plugin.cfg")
 
 [rendering]
 

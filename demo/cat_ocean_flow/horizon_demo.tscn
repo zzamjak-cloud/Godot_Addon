@@ -1,0 +1,66 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://demo/cat_ocean_flow/demo_terrain.gd" id="1_terrain"]
+[ext_resource type="Script" path="res://addons/cat_ocean_flow/cat_ocean_flow_surface.gd" id="2_surface"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
+sky_top_color = Color(0.32, 0.56, 0.86, 1)
+sky_horizon_color = Color(0.74, 0.86, 0.95, 1)
+ground_horizon_color = Color(0.74, 0.86, 0.95, 1)
+ground_bottom_color = Color(0.74, 0.86, 0.95, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_mat")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+fog_enabled = true
+fog_light_color = Color(0.74, 0.86, 0.95, 1)
+fog_density = 0.0025
+fog_sky_affect = 0.0
+
+[node name="HorizonDemo" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.98724, 0.05264, -0.15028, -0.00000, 0.94377, 0.33061, 0.15923, -0.32639, 0.93173, 0.00000, 10.00000, 0.00000)
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(-1.00000, 0.00000, 0.00000, 0.00000, 0.96296, 0.26963, 0.00000, 0.26963, -0.96296, 0.00000, 14.00000, -40.00000)
+fov = 60.0
+far = 2000.0
+
+[node name="Island" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 110)
+script = ExtResource("1_terrain")
+shape = 2
+size = Vector2(400, 400)
+resolution = 200
+
+[node name="OceanSet" type="Node3D" parent="."]
+
+[node name="OceanNear" type="MeshInstance3D" parent="OceanSet" node_paths=PackedStringArray("far_surface")]
+script = ExtResource("2_surface")
+size_x = 80.0
+size_z = 80.0
+subdiv_x = 80
+subdiv_z = 80
+uv_tiling = Vector2(2, 2)
+follow_camera = true
+wave_edge_fade = 0.15
+far_surface = NodePath("../OceanFar")
+
+[node name="OceanFar" type="MeshInstance3D" parent="OceanSet"]
+script = ExtResource("2_surface")
+size_x = 1000.0
+size_z = 1000.0
+subdiv_x = 8
+subdiv_z = 8
+wave_enabled = false
+highlight_enabled = false

@@ -1,0 +1,50 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://demo/cat_ocean_flow/demo_terrain.gd" id="1_terrain"]
+[ext_resource type="Script" path="res://addons/cat_ocean_flow/cat_ocean_flow_surface.gd" id="2_surface"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
+sky_top_color = Color(0.32, 0.56, 0.86, 1)
+sky_horizon_color = Color(0.74, 0.86, 0.95, 1)
+ground_horizon_color = Color(0.74, 0.86, 0.95, 1)
+ground_bottom_color = Color(0.74, 0.86, 0.95, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_mat")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+fog_enabled = true
+fog_light_color = Color(0.74, 0.86, 0.95, 1)
+fog_density = 0.006
+fog_sky_affect = 0.0
+
+[node name="OceanDemo" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.98724, 0.05264, -0.15028, -0.00000, 0.94377, 0.33061, 0.15923, -0.32639, 0.93173, 0.00000, 10.00000, 0.00000)
+light_energy = 1.0
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(-0.95578, 0.09237, -0.27920, 0.00000, 0.94939, 0.31410, 0.29409, 0.30021, -0.90741, -6.00000, 9.00000, -16.00000)
+fov = 55.0
+
+[node name="Beach" type="MeshInstance3D" parent="."]
+script = ExtResource("1_terrain")
+size = Vector2(90, 90)
+resolution = 180
+
+[node name="Ocean" type="MeshInstance3D" parent="."]
+script = ExtResource("2_surface")
+size_x = 90.0
+size_z = 90.0
+subdiv_x = 120
+subdiv_z = 120
+uv_tiling = Vector2(4, 4)
