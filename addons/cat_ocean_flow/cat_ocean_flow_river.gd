@@ -190,6 +190,11 @@ func apply_river_wave_defaults() -> void:
 	wave_a = Vector4(0.0, 1.0, 0.03, 3.0)    # 진폭 ≈ 0.014 m
 	wave_b = Vector4(0.7, 0.7, 0.02, 2.0)    # 진폭 ≈ 0.006 m
 	ripple = Vector4(0.012, 5.0, 2.5, 0.0)   # 진폭 0.012 m
+	# 강 폭이 수 m 라 너울·얼룩도 그만큼 잘게 둔다
+	wave_phase_jitter = 0.4
+	swell_variation = 0.3
+	swell_scale = 10.0
+	surface_breakup_scale = 8.0
 
 
 ## 점 3개짜리 완만한 S자 기본 경로.

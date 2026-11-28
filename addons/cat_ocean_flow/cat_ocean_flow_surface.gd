@@ -322,6 +322,13 @@ static func _insert_axis_line(axis: PackedFloat32Array, value: float, step: floa
 
 #region 카메라 추적
 
+func _apply_all_properties() -> void:
+	super()
+	# 정점이 드문 먼 바다는 얼룩이 정점 사이에서 선형 보간돼 각진 무늬가 되므로 끈다(근거리 패치 가장자리도 중립으로 페이드)
+	if vertex_spacing > surface_breakup_scale * 0.25:
+		_material.set_shader_parameter(&"breakup_params", Vector4(0.0, 1.0 / surface_breakup_scale, 0.0, 0.0))
+
+
 func _apply_surface_properties(mat: ShaderMaterial) -> void:
 	mat.set_shader_parameter(&"wave_edge_fade", wave_edge_fade)
 	mat.set_shader_parameter(&"uv_world_offset", build_uv_world_offset(global_position))

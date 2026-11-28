@@ -1,5 +1,5 @@
 extends SceneTree
-## CatOceanFlow 헤드리스 검증. 원본 FlowChannelTests·OceanFlowPathTests 핵심과 메쉬·동기화·복제를 확인한다.
+## CatOceanFlow 헤드리스 검증. 원본 FlowChannelTests·OceanFlowPathTests 핵심과 메쉬·랜덤성·동기화·복제를 확인한다.
 ## 실행: $GODOT --headless --path . -s tests/cat_ocean_flow/test_ocean_flow.gd  (실패 시 종료 코드 1)
 
 var _failures := 0
@@ -12,6 +12,7 @@ func _initialize() -> void:
 	_test_grid()
 	_test_path()
 	_test_ribbon()
+	_test_variation()
 	await _test_far_sync()
 	await _test_river_chain()
 	await _test_duplicate_independence()
@@ -323,6 +324,48 @@ func _test_ribbon() -> void:
 #endregion
 
 
+#region 랜덤성
+
+func _lock_of(water: CatOceanFlowBase, prop: StringName) -> bool:
+	var info := {name = prop, usage = PROPERTY_USAGE_DEFAULT}
+	water._validate_property(info)
+	return info.usage & PROPERTY_USAGE_READ_ONLY != 0
+
+
+func _test_variation() -> void:
+	var s := CatOceanFlowSurface.new()
+	_near(s.wave_phase_jitter, 0.5, 1e-6, "위상 지터 기본값")
+	_near(s.swell_variation, 0.4, 1e-6, "너울 변화 기본값")
+	_near(s.swell_scale, 40.0, 1e-6, "너울 크기 기본값")
+	_near(s.surface_breakup, 0.6, 1e-6, "얼룩 세기 기본값")
+	_near(s.surface_breakup_scale, 25.0, 1e-6, "얼룩 크기 기본값")
+	# 변화 값은 진폭을 키우지 않으므로 컬링 여유는 그대로다
+	var pad := s.get_bounds_padding()
+	s.swell_variation = 1.0
+	s.wave_phase_jitter = 1.0
+	_near(s.get_bounds_padding(), pad, 1e-6, "변화 값은 컬링 여유를 바꾸지 않는다")
+	s.swell_scale = 0.0
+	_check(s.swell_scale > 0.0, "너울 크기는 0 이 되지 않는다(역수 업로드)")
+	s.surface_breakup_scale = -3.0
+	_check(s.surface_breakup_scale > 0.0, "얼룩 크기는 0 이 되지 않는다(역수 업로드)")
+
+	_check(not _lock_of(s, &"wave_phase_jitter"), "파도가 켜져 있으면 위상 지터 편집 가능")
+	s.wave_enabled = false
+	_check(_lock_of(s, &"wave_phase_jitter") and _lock_of(s, &"swell_variation") and _lock_of(s, &"swell_scale"), "파도를 끄면 변화 값 잠금")
+	s.cell_foam_enabled = false
+	_check(not _lock_of(s, &"surface_breakup"), "하이라이트만 켜져 있어도 얼룩 편집 가능")
+	s.highlight_enabled = false
+	_check(_lock_of(s, &"surface_breakup") and _lock_of(s, &"surface_breakup_scale"), "셀 거품·하이라이트 둘 다 끄면 얼룩 잠금")
+	s.free()
+
+	var r := CatOceanFlowRiver.new()
+	_check(r.swell_scale < 40.0 and r.surface_breakup_scale < 25.0, "강은 너울·얼룩 크기가 바다보다 작다")
+	_check(r.wave_phase_jitter > 0.0 and r.swell_variation > 0.0, "강도 파동 변화가 켜져 있다")
+	r.free()
+
+#endregion
+
+
 #region 동기화
 
 func _test_far_sync() -> void:
@@ -351,6 +394,24 @@ func _test_far_sync() -> void:
 	_near(far.channel0.speed, 0.3, 1e-6, "채널 값 복사")
 	_check(far.channel0 != near.channel0, "채널은 공유하지 않고 복사")
 	_check(not far.wave_enabled and near.wave_enabled, "기능 토글은 동기화하지 않는다")
+	near.wave_phase_jitter = 0.9
+	near.swell_variation = 0.7
+	near.swell_scale = 55.0
+	near.surface_breakup = 0.25
+	near.surface_breakup_scale = 31.0
+	await process_frame
+	await process_frame
+	_check(far.wave_phase_jitter == 0.9 and far.swell_variation == 0.7 and far.swell_scale == 55.0, "파동 변화 값 복사")
+	_check(far.surface_breakup == 0.25 and far.surface_breakup_scale == 31.0, "얼룩 값 복사")
+	var far_lock := {name = &"surface_breakup", usage = PROPERTY_USAGE_DEFAULT}
+	far._validate_property(far_lock)
+	_check(far_lock.usage & PROPERTY_USAGE_READ_ONLY != 0, "먼 바다는 얼룩 값이 잠긴다")
+	# 정점 간격(400/분할)이 얼룩 크기의 1/4 보다 크면 먼 바다에는 얼룩을 올리지 않는다
+	var far_breakup: Vector4 = far.get_water_material().get_shader_parameter(&"breakup_params")
+	_near(far_breakup.x, 0.0, 1e-6, "정점이 드문 먼 바다는 얼룩 끔")
+	var near_breakup: Vector4 = near.get_water_material().get_shader_parameter(&"breakup_params")
+	_near(near_breakup.x, 0.25, 1e-6, "근거리 바다는 얼룩 세기 그대로")
+	_near(near_breakup.y, 1.0 / 31.0, 1e-6, "얼룩 크기는 역수로 올린다")
 	_check(far.is_driven(), "먼 바다는 구동 표시")
 	# 동기화가 한 번에 가라앉아 매 프레임 다시 돌지 않는다
 	await process_frame

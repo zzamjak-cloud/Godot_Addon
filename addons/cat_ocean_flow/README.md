@@ -60,8 +60,8 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 | 형상 | 크기·분할 수·UV 타일링·구멍·카메라 추적·파도 가장자리 페이드 (바다) / 경로·폭·폭 곡선·샘플 수·v 밀도·시작 v (강) |
 | 물 색 | `shallow_color`·`deep_color`, 알파, `depth_fade_distance` |
 | 접경 포말 | `shore_foam_enabled`, 색·두께(`foam_distance`)·경계·부드러움·노이즈 세기·알파·거리 페이드 + **포말 노이즈 흐름 `channel0`** |
-| 수면 노이즈 | `noise_texture` + **수면 노이즈 흐름 `channel1`** + 난류(`noise_churn_enabled` …) + 셀 거품(`cell_foam_enabled` …) |
-| 파동 | `wave_enabled`, Gerstner 파 `wave_a`·`wave_b`(방향 xy, 가파름 z, 파장 w), 잔물결 `ripple`(진폭 x, 주파수 y, 속도 z) |
+| 수면 노이즈 | `noise_texture` + **수면 노이즈 흐름 `channel1`** + 난류(`noise_churn_enabled` …) + 셀 거품(`cell_foam_enabled` …) + 얼룩(`surface_breakup` …) |
+| 파동 | `wave_enabled`, Gerstner 파 `wave_a`·`wave_b`(방향 xy, 가파름 z, 파장 w), 잔물결 `ripple`(진폭 x, 주파수 y, 속도 z) + 변화(`wave_phase_jitter`, `swell_variation`, `swell_scale`) |
 | 하이라이트 | `highlight_enabled`, 색·집중도·경계·세기, `main_light` |
 | 시간 | `use_unscaled_time` |
 | 먼 바다 동기화 / 다음 강 이어붙임 | `far_surface` / `next_river` |
@@ -185,11 +185,28 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 | Surface: `sync_far_surface()`, `has_far_surface`, `synced_far_uv_tiling`, `estimated_vertex_count`, `vertex_spacing`, `effective_snap`, `build_grid_arrays()`, `create_ocean_set()` | `SyncFarSurface` …, 메뉴 `Ocean Set Make` |
 | River: `sync_next_river()`, `apply_river_wave_defaults()`, `create_default_path()`, `get_path_end() -> {ok, position, direction}`, `path_length`, `uv_end_v`, `start_width`, `end_width`, `estimated_vertex_count`, `resample()`, `measure_length()`, `create_river_set()` | `SyncNextRiver`, `ApplyRiverWaveDefaults`, `CreateDefaultPath`, `TryGetPathEnd` …, 메뉴 `River Set Make` |
 
+## 랜덤성 (균일함 깨기)
+
+파동·거품·반짝임이 바다 전체에 똑같이 반복되지 않도록 지역마다 다르게 만듭니다. 전부 월드 좌표의 저주파 sin 합(서로 무리수비 방향·주파수)으로 **정점 셰이더에서** 계산하므로 텍스처 페치와 셰이더 변형은 늘지 않습니다.
+
+| 속성 | 기본값 (강) | 내용 |
+|---|---|---|
+| `wave_phase_jitter` | 0.5 (0.4) | 파 A·B의 위상을 지역마다 다르게 비틀어 마루선이 곧게 이어지지 않게 합니다. 비틀기 주기는 각 파장의 6배라 법선 미분은 무시합니다 |
+| `swell_variation` | 0.4 (0.3) | 진폭을 지역마다 줄여 너울 묶음을 만듭니다(1이면 최소 0.3배). 진폭을 키우지 않으므로 컬링 여유(`extra_cull_margin`)는 그대로입니다. 묶음은 파 A 방향으로 천천히 흐릅니다 |
+| `swell_scale` | 40 m (10 m) | 너울 묶음 한 덩어리의 크기 |
+| `surface_breakup` | 0.6 | 셀 거품·하이라이트의 개수와 밝기를 구역마다 늘리거나 줄입니다(평균 밀도는 유지). 하이라이트의 노이즈 흔들림도 구역마다 달라집니다 |
+| `surface_breakup_scale` | 25 m (8 m) | 얼룩 한 덩어리의 크기 |
+
+- 값을 0으로 두면 그 효과는 이전과 완전히 같은 결과입니다. **잔물결은 예외**입니다: `sin(x)·cos(z)` 격자 대신 서로 다른 방향(약 37°·113°·-15°)·주파수비의 방향파 3개 합으로 바뀌어 격자 무늬가 생기지 않습니다. 가중치 합이 1이라 최대 진폭은 그대로 `ripple.x`입니다.
+- 얼룩은 정점 사이를 선형 보간하므로 정점이 드문 메쉬에서는 뭉툭해집니다. 그래서 정점 간격이 `surface_breakup_scale`의 1/4보다 큰 바다(예: 세트의 먼 바다 1000 m / 8분할)에는 얼룩을 올리지 않습니다. 근거리 패치는 `wave_edge_fade` 구간에서 얼룩이 0으로 돌아가 먼 바다와 이음매가 생기지 않습니다.
+- 얼룩은 셀 거품·하이라이트가 둘 다 꺼져 있으면 잠기고, 변화 값은 파도를 끄면 잠깁니다.
+
 ## 성능
 
 - 프레임당 CPU: 노드 하나당 이징 2회 + `set_shader_parameter` 1회(오프셋), 난류가 켜져 있으면 5회, 하이라이트가 켜져 있으면 빛이 바뀐 프레임에만 2회. 메쉬는 파라미터가 바뀔 때만 다시 만들고 정점 움직임은 GPU가 맡습니다.
 - 흐름 오프셋은 업로드 전 `[0,1)`로 감아 장시간 실행해도 정밀도가 무너지지 않습니다.
-- 깊이 텍스처 페치는 항상 1회, 노이즈 페치는 포말·셀 거품 각 1회(난류를 켜면 각 2회).
+- 깊이 텍스처 페치는 항상 1회, 노이즈 페치는 포말·셀 거품 각 1회(난류를 켜면 각 2회). 랜덤성은 페치를 늘리지 않습니다.
+- 랜덤성 비용: 정점당 sin 약 15회(저주파 함수 4번 + 잔물결 3개), 프래그먼트는 얼룩 varying 1개로 곱셈·덧셈 몇 번(셀 거품 문턱·세기, 하이라이트 흔들림·경계·세기)만 늘어납니다.
 - 모바일에서는 물 하나당 정점 20,000개 이하를 권장합니다.
 
 ## 주의 사항
@@ -209,7 +226,7 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 | `demo/cat_ocean_flow/ocean_demo.tscn` | 경사진 모래 해변 + 바다(포말·깊이 색·셀 거품·하이라이트) |
 | `demo/cat_ocean_flow/river_demo.tscn` | 골짜기를 따라 흐르는 강(폭 곡선, `EditPath`) |
 | `demo/cat_ocean_flow/horizon_demo.tscn` | 근거리 추적 패치 + 먼 바다 세트와 섬 |
-| `tests/cat_ocean_flow/test_ocean_flow.gd` | 헤드리스 로직 검증(흐름·난류·그리드·경로·리본·동기화·복제·저장) |
+| `tests/cat_ocean_flow/test_ocean_flow.gd` | 헤드리스 로직 검증(흐름·난류·그리드·경로·리본·랜덤성·동기화·복제·저장) |
 | `tests/cat_ocean_flow/check_shader_variants.gd` | 창 모드: 32개 셰이더 조합 컴파일 확인 |
 | `tests/cat_ocean_flow/capture_3d.gd` | 창 모드: 3D 씬 PNG 캡처 |
 
@@ -230,6 +247,7 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 - **수치**: GDScript 실수는 64비트라 난류 해시(`sin(…) × 43758.5453`의 소수부)가 Unity float와 비트 단위로 같지는 않습니다. 성질(결정적, [0,1), 64 주기, 전환 시 가중치 0)은 같습니다.
 - **동기화 Undo**: 원본은 동기화 값 밀어넣기를 Undo에 기록했지만, 여기서는 동기화가 앞 노드 값에서 항상 다시 유도되므로 기록하지 않습니다.
 - **인스펙터**: 접힘 상태 저장(EditorPrefs)·채널 속도 곡선 그래프·"구동 중" 배지는 없습니다. 잠금은 읽기 전용 표시로, 경고는 노드 경고로 대신합니다.
+- **랜덤성 추가**: 원본에 없는 `wave_phase_jitter`·`swell_variation`·`swell_scale`·`surface_breakup`·`surface_breakup_scale`을 더했고, 잔물결을 `sin·cos` 격자에서 방향파 3개 합으로 바꿨습니다. 원본과 같은 모습이 필요하면 새 값을 0으로 두세요(잔물결 모양만 다릅니다).
 - **16/32비트 인덱스 전환 경고 없음**: Godot `ArrayMesh`가 인덱스 크기를 알아서 고릅니다.
 
 ## 라이선스

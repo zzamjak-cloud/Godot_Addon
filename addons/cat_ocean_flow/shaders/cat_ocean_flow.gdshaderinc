@@ -51,12 +51,26 @@ uniform vec3 light_color = vec3(1.0);                 // 색 × 에너지
 uniform vec4 wave_a = vec4(1.0, 0.0, 0.25, 8.0);   // xy = 방향, z = 가파름, w = 파장
 uniform vec4 wave_b = vec4(0.7, 0.7, 0.15, 4.0);
 uniform vec4 ripple = vec4(0.04, 3.0, 1.5, 0.0);   // x = 진폭, y = 주파수, z = 속도
+uniform vec4 wave_variation = vec4(0.0, 0.0, 0.025, 0.0);   // x = 위상 지터, y = 너울 변화, z = 1 / 너울 크기
+uniform vec4 breakup_params = vec4(0.0, 0.04, 0.0, 0.0);    // x = 얼룩 세기, y = 1 / 얼룩 크기
 
 uniform float depth_available = 1.0;
 
 varying vec4 v_uv01;
 varying vec3 v_world_pos;
 varying vec3 v_world_normal;
+#if defined(CELL_FOAM) || defined(SPECULAR)
+varying float v_breakup;   // 얼룩 -1(성김) ~ 1(빽빽함) × 세기. 0 이면 균일
+#endif
+
+// 텍스처 없이 만드는 저주파 값(약 -1~1). 방향·주파수가 서로 무리수비라 반복 무늬가 드러나지 않는다.
+// p 는 주기 단위(1 = 주 성분 한 주기). 정점 셰이더에서만 쓴다.
+float cat_lowfreq(vec2 p, float t) {
+	p *= 6.28318530718;
+	return (sin(dot(p, vec2(0.799, 0.602)) + t * 0.37)
+			+ sin(dot(p, vec2(-0.391, 0.921)) * 1.37 - t * 0.29 + 1.9)
+			+ sin(dot(p, vec2(0.966, -0.259)) * 0.73 + t * 0.21 + 4.1)) * 0.33333333;
+}
 
 // 텍스처 페치 없이 UV 를 비틀어 그물망 무늬가 통째로 미끄러지는 느낌을 없앤다.
 vec2 cat_warp_uv(vec2 uv, float amount, float time) {
@@ -79,13 +93,14 @@ float cat_sample_churn(vec2 uv, vec2 flow_offset, vec4 phase_a, vec4 phase_b, fl
 }
 
 // Gerstner 파 하나의 변위. 법선용 접선·종법선 미분을 함께 누적한다.
-vec3 cat_gerstner(vec4 wave, vec3 p, float time, inout vec3 tangent, inout vec3 binormal) {
+// phase 는 지역별 위상 비틀기. 저주파라 법선 미분에서는 무시한다.
+vec3 cat_gerstner(vec4 wave, vec3 p, float time, float phase, inout vec3 tangent, inout vec3 binormal) {
 	vec2 dir = normalize(wave.xy + vec2(1e-5, 0.0));
 	float steepness = wave.z;
 	float wavelength = max(wave.w, 1e-3);
 	float k = 6.28318530718 / wavelength;
 	float c = sqrt(9.8 / k);
-	float f = k * (dot(dir, p.xz) - c * time);
+	float f = k * (dot(dir, p.xz) - c * time) + phase;
 	float a = steepness / k;
 	float sin_f = sin(f);
 	float cos_f = cos(f);
@@ -106,14 +121,31 @@ float cat_wave_edge_fade(vec2 mesh_uv) {
 
 void vertex() {
 	vec3 normal_ws = vec3(0.0, 1.0, 0.0);
+#if defined(CELL_FOAM) || defined(SPECULAR)
+	// 거품·반짝임 얼룩. 평균 밀도는 그대로 두고 구역마다 빽빽하거나 성기게 한다.
+	// 근거리 패치 가장자리에서는 0 으로 돌려 먼 바다와 이음매가 생기지 않게 한다
+	float breakup = smoothstep(-0.55, 0.55, cat_lowfreq(VERTEX.xz * breakup_params.y + vec2(TIME * 0.011, -TIME * 0.007), TIME * 0.2));
+	v_breakup = (breakup * 2.0 - 1.0) * breakup_params.x * cat_wave_edge_fade(UV);
+#endif
 #ifdef WAVE_ON
 	vec3 tangent = vec3(1.0, 0.0, 0.0);
 	vec3 binormal = vec3(0.0, 0.0, 1.0);
 	vec3 base_pos = VERTEX;
-	vec3 displacement = cat_gerstner(wave_a, base_pos, TIME, tangent, binormal);
-	displacement += cat_gerstner(wave_b, base_pos, TIME, tangent, binormal);
-	displacement.y += sin(base_pos.x * ripple.y + TIME * ripple.z)
-			* cos(base_pos.z * ripple.y + TIME * ripple.z) * ripple.x;
+	// 지터 공간 주기는 파장의 6배 이상이라 위상 미분이 파수의 절반을 넘지 않는다
+	float jitter_a = wave_variation.x * 3.0 * cat_lowfreq(base_pos.xz / max(wave_a.w * 6.0, 1.0), TIME * 0.3);
+	float jitter_b = wave_variation.x * 3.0 * cat_lowfreq(base_pos.xz / max(wave_b.w * 6.0, 1.0) + vec2(17.3, -9.1), TIME * 0.3 + 2.0);
+	// 너울 묶음: 진폭을 1 이하로만 줄여 컬링 여유가 그대로이고, 가파름에 곱해 법선도 같은 배율을 따른다
+	vec2 swell_dir = normalize(wave_a.xy + vec2(1e-5, 0.0));
+	float swell = smoothstep(-0.5, 0.5, cat_lowfreq((base_pos.xz - swell_dir * TIME * 1.5) * wave_variation.z, TIME * 0.15));
+	float amp = 1.0 - wave_variation.y * 0.7 * swell;
+	vec3 displacement = cat_gerstner(vec4(wave_a.xy, wave_a.z * amp, wave_a.w), base_pos, TIME, jitter_a, tangent, binormal);
+	displacement += cat_gerstner(vec4(wave_b.xy, wave_b.z * amp, wave_b.w), base_pos, TIME, jitter_b, tangent, binormal);
+	// 잔물결: 무리수비 각도(약 37°, 113°, -15°)·주파수비의 방향파 3개. 가중치 합 1 이라 최대 진폭은 ripple.x
+	vec2 rp = base_pos.xz * ripple.y;
+	float rt = TIME * ripple.z;
+	displacement.y += (0.45 * sin(dot(rp, vec2(0.799, 0.602)) + rt + jitter_a)
+			+ 0.35 * sin(dot(rp, vec2(-0.391, 0.921)) * 1.37 + rt * 1.13 - jitter_b + 1.3)
+			+ 0.2 * sin(dot(rp, vec2(0.966, -0.259)) * 0.83 - rt * 0.87 + jitter_a * 0.7 + 2.9)) * ripple.x;
 	float fade = cat_wave_edge_fade(UV);
 	VERTEX += displacement * fade;
 	normal_ws = normalize(mix(vec3(0.0, 1.0, 0.0), cross(binormal, tangent), fade));
@@ -168,8 +200,10 @@ void fragment() {
 #else
 	float noise1 = texture(noise_texture, v_uv01.zw).r;
 #endif
-	float cell = smoothstep(cell_cutoff - cell_softness, cell_cutoff + cell_softness, noise1);
-	color += cell_color.rgb * (cell * cell_intensity);
+	// 얼룩이 성긴 곳은 문턱을 올려 거품 개수 자체가 줄고, 빽빽한 곳은 늘고 밝아진다
+	float cell_cut = cell_cutoff - v_breakup * 0.1;
+	float cell = smoothstep(cell_cut - cell_softness, cell_cut + cell_softness, noise1);
+	color += cell_color.rgb * (cell * cell_intensity * (1.0 + v_breakup * 0.5));
 #endif
 
 	// --- 5. 셀 톤 하이라이트 ---
@@ -179,10 +213,13 @@ void fragment() {
 	float ndoth = clamp(dot(normalize(v_world_normal), half_dir), 0.0, 1.0);
 #ifdef CELL_FOAM
 	// 평평한 수면에서 하이라이트가 면 전체에 켜지거나 꺼지지 않도록 수면 노이즈로 흔든다
-	ndoth = clamp(ndoth + (noise1 - 0.5) * 0.12, 0.0, 1.0);
+	// 얼룩이 성긴 곳일수록 더 크게 흔들어 반짝임이 띠로 이어지지 않고 흩어지게 한다
+	ndoth = clamp(ndoth + (noise1 - 0.5) * 0.12 * (1.0 - v_breakup * 0.5), 0.0, 1.0);
 #endif
-	float spec = smoothstep(highlight_cutoff - 0.02, highlight_cutoff + 0.02, pow(ndoth, max(highlight_power, 1.0)));
-	color += highlight_color.rgb * light_color * (spec * highlight_intensity);
+	// 얼룩이 성긴 곳은 경계를 올려 반짝임 개수 자체가 줄고, 빽빽한 곳은 는다
+	float spec_cut = highlight_cutoff - v_breakup * 0.15;
+	float spec = smoothstep(spec_cut - 0.02, spec_cut + 0.02, pow(ndoth, max(highlight_power, 1.0)));
+	color += highlight_color.rgb * light_color * (spec * highlight_intensity * (1.0 + v_breakup * 0.5));
 #endif
 
 	ALBEDO = color;

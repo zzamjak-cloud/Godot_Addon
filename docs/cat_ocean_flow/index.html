@@ -252,17 +252,22 @@ ch.ease = CatEase.Type.OUT_BOUNCE</pre>
     </div>
 
     <article class="feature" id="waves">
-      <div class="media"><video src="../media/cat_ocean_flow/05_waves.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="파동을 끄고 켜고 가파르게 하는 시연"></video></div>
+      <div class="media"><video src="../media/cat_ocean_flow/05_waves.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="파동을 끄고 켜고, 위상 지터·너울 변화를 더한 뒤 가파르게 하는 시연"></video></div>
       <div>
         <h3>파동 <code>wave_enabled</code></h3>
-        <p class="desc">Gerstner 파 2개에 잔물결을 더하고 법선은 해석적으로 구합니다. 파동 값은 방향 xy, 가파름 z, 파장 w를 한 Vector4에 담습니다.</p>
+        <p class="desc">Gerstner 파 2개에 잔물결을 더하고 법선은 해석적으로 구합니다. 파동 값은 방향 xy, 가파름 z, 파장 w를 한 Vector4에 담습니다. 위상 지터와 너울 변화가 지역마다 마루선을 비틀고 진폭을 달리해 바다 전체가 똑같이 반복되지 않습니다(텍스처 없이 정점 셰이더에서 계산).</p>
         <div class="table-scroll"><table class="props">
           <tr><th>wave_a / wave_b</th><td>Gerstner 파 (방향 xy, 가파름 z, 파장 w). 기본 A = (1, 0, 0.25, 8), B = (0.7, 0.7, 0.15, 4)</td></tr>
-          <tr><th>ripple</th><td>잔물결 (진폭 x, 주파수 y, 속도 z). 기본 (0.04, 3, 1.5)</td></tr>
+          <tr><th>ripple</th><td>잔물결 (진폭 x, 주파수 y, 속도 z). 기본 (0.04, 3, 1.5). 방향이 다른 방향파 3개 합이라 격자 무늬가 없음</td></tr>
+          <tr><th>wave_phase_jitter</th><td>지역별 위상 비틀기 0~1 — 마루선이 곧게 이어지지 않음 (기본 0.5)</td></tr>
+          <tr><th>swell_variation</th><td>지역별 진폭 감소 0~1 — 너울 묶음, 진폭을 키우지는 않음 (기본 0.4)</td></tr>
+          <tr><th>swell_scale</th><td>너울 묶음 크기 m (기본 40, 강 10)</td></tr>
           <tr><th>wave_edge_fade</th><td>패치 가장자리에서 파도를 줄이는 비율 (이음매 보호)</td></tr>
         </table></div>
 <pre>ocean.wave_a = Vector4(1, 0, 0.4, 8)
-ocean.ripple.x = 0.06</pre>
+ocean.ripple.x = 0.06
+ocean.wave_phase_jitter = 0.8
+ocean.swell_variation = 0.6</pre>
         <p class="note">가파름 합이 1을 넘으면 수면이 접힙니다. 파장은 정점 간격의 4배 이상이어야 파도로 보입니다.</p>
       </div>
     </article>
@@ -270,15 +275,18 @@ ocean.ripple.x = 0.06</pre>
       <div class="media"><video src="../media/cat_ocean_flow/06_highlight.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="태양 각도와 경계값을 바꾸는 시연"></video></div>
       <div>
         <h3>하이라이트 <code>highlight_enabled</code></h3>
-        <p class="desc">메인 라이트 방향으로 셀 톤 반짝임을 그립니다. 법선이 빛을 반사하는 곳만 흰색으로 끊어 그려 만화 같은 윤슬이 됩니다.</p>
+        <p class="desc">메인 라이트 방향으로 셀 톤 반짝임을 그립니다. 법선이 빛을 반사하는 곳만 흰색으로 끊어 그려 만화 같은 윤슬이 됩니다. 얼룩(<code>surface_breakup</code>)이 반짝임과 셀 거품을 구역마다 빽빽하거나 성기게 만들어 고르게 깔리지 않습니다.</p>
         <div class="table-scroll"><table class="props">
           <tr><th>highlight_cutoff</th><td>반짝임 경계 — 낮을수록 넓음 (기본 0.5)</td></tr>
           <tr><th>highlight_power</th><td>집중도 (기본 64)</td></tr>
           <tr><th>highlight_intensity</th><td>세기 (기본 0.8)</td></tr>
           <tr><th>main_light</th><td>빛 지정. 비우면 씬의 첫 DirectionalLight3D</td></tr>
+          <tr><th>surface_breakup</th><td>반짝임·셀 거품 얼룩 0~1 — 구역별 개수·밝기 차, 평균은 유지 (기본 0.6)</td></tr>
+          <tr><th>surface_breakup_scale</th><td>얼룩 크기 m (기본 25, 강 8). 정점이 드문 먼 바다에는 적용 안 함</td></tr>
         </table></div>
 <pre>ocean.highlight_cutoff = 0.7
-ocean.main_light = $Sun</pre>
+ocean.main_light = $Sun
+ocean.surface_breakup = 0.8</pre>
       </div>
     </article>
   </section>
@@ -376,6 +384,7 @@ add_child(river)</pre>
           <li>강 경로는 전용 편집기 대신 Godot <code>Path3D</code> 기즈모로 편집합니다.</li>
           <li>이징은 <code>CatEase.Type</code>(1부터)이며 Custom은 32입니다.</li>
           <li>카메라 추적 시 두 바다의 노이즈 이음매 어긋남을 UV 보정으로 고쳤습니다.</li>
+          <li>파동 위상 지터·너울 변화·거품/반짝임 얼룩을 더했고, 잔물결을 격자 대신 방향파 3개 합으로 바꿨습니다. 새 값을 0으로 두면 잔물결 모양만 원본과 다릅니다.</li>
         </ul>
       </div>
     </div>

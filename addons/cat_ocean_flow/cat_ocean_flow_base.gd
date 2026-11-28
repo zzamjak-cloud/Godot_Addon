@@ -22,7 +22,8 @@ const SYNCED_APPEARANCE: Array[StringName] = [
 	&"foam_alpha", &"foam_fade_start", &"foam_fade_end",
 	&"noise_texture", &"churn_speed", &"churn_jitter", &"churn_warp", &"churn_rotation",
 	&"cell_color", &"cell_cutoff", &"cell_softness", &"cell_intensity",
-	&"wave_a", &"wave_b", &"ripple",
+	&"surface_breakup", &"surface_breakup_scale",
+	&"wave_a", &"wave_b", &"ripple", &"wave_phase_jitter", &"swell_variation", &"swell_scale",
 	&"highlight_color", &"highlight_power", &"highlight_cutoff", &"highlight_intensity",
 	&"use_unscaled_time",
 ]
@@ -32,7 +33,7 @@ const _GROUP_TOGGLES := {
 		&"foam_noise_amount", &"foam_alpha", &"foam_fade_start", &"foam_fade_end", &"channel0"],
 	&"noise_churn_enabled": [&"churn_speed", &"churn_jitter", &"churn_warp", &"churn_rotation"],
 	&"cell_foam_enabled": [&"cell_color", &"cell_cutoff", &"cell_softness", &"cell_intensity"],
-	&"wave_enabled": [&"wave_a", &"wave_b", &"ripple"],
+	&"wave_enabled": [&"wave_a", &"wave_b", &"ripple", &"wave_phase_jitter", &"swell_variation", &"swell_scale"],
 	&"highlight_enabled": [&"highlight_color", &"highlight_power", &"highlight_cutoff",
 		&"highlight_intensity", &"main_light"],
 }
@@ -199,6 +200,20 @@ static var _default_noise: Texture2D
 		if cell_intensity != v:
 			cell_intensity = v
 			_changed()
+@export_subgroup("얼룩")
+## 셀 거품·하이라이트 밀도를 구역마다 다르게 한다. 0 이면 수면 전체가 균일
+@export_range(0.0, 1.0) var surface_breakup: float = 0.6:
+	set(v):
+		if surface_breakup != v:
+			surface_breakup = v
+			_changed()
+## 얼룩 한 덩어리의 크기 (월드 m)
+@export_range(2.0, 200.0, 0.1, "or_greater") var surface_breakup_scale: float = 25.0:
+	set(v):
+		v = maxf(v, 0.1)
+		if surface_breakup_scale != v:
+			surface_breakup_scale = v
+			_changed()
 #endregion
 
 #region 파동
@@ -227,6 +242,26 @@ static var _default_noise: Texture2D
 		if ripple != v:
 			ripple = v
 			_changed(true)
+@export_subgroup("변화")
+## 지역마다 파의 위상을 비틀어 마루선이 곧게 이어지지 않게 한다
+@export_range(0.0, 1.0) var wave_phase_jitter: float = 0.5:
+	set(v):
+		if wave_phase_jitter != v:
+			wave_phase_jitter = v
+			_changed()
+## 지역마다 진폭을 줄여 너울 묶음을 만든다(1 이면 최소 0.3배). 진폭을 키우지는 않는다
+@export_range(0.0, 1.0) var swell_variation: float = 0.4:
+	set(v):
+		if swell_variation != v:
+			swell_variation = v
+			_changed()
+## 너울 묶음 한 덩어리의 크기 (월드 m)
+@export_range(2.0, 400.0, 0.1, "or_greater") var swell_scale: float = 40.0:
+	set(v):
+		v = maxf(v, 0.1)
+		if swell_scale != v:
+			swell_scale = v
+			_changed()
 #endregion
 
 #region 하이라이트
@@ -355,6 +390,9 @@ func _validate_property(property: Dictionary) -> void:
 	for toggle: StringName in _GROUP_TOGGLES:
 		if prop_name in _GROUP_TOGGLES[toggle] and not get(toggle):
 			property.usage |= PROPERTY_USAGE_READ_ONLY
+	# 얼룩은 셀 거품과 하이라이트가 같이 쓰므로 둘 다 꺼졌을 때만 잠근다
+	if prop_name in [&"surface_breakup", &"surface_breakup_scale"] and not cell_foam_enabled and not highlight_enabled:
+		property.usage |= PROPERTY_USAGE_READ_ONLY
 	if is_driven() and prop_name in _driven_properties():
 		property.usage |= PROPERTY_USAGE_READ_ONLY
 
@@ -662,6 +700,8 @@ func _apply_all_properties() -> void:
 	m.set_shader_parameter(&"wave_a", wave_a)
 	m.set_shader_parameter(&"wave_b", wave_b)
 	m.set_shader_parameter(&"ripple", ripple)
+	m.set_shader_parameter(&"wave_variation", Vector4(wave_phase_jitter, swell_variation, 1.0 / swell_scale, 0.0))
+	m.set_shader_parameter(&"breakup_params", Vector4(surface_breakup, 1.0 / surface_breakup_scale, 0.0, 0.0))
 
 	# 4.7 의 세 렌더러 모두 hint_depth_texture 를 지원한다. 더미 렌더러(헤드리스)만 제외
 	m.set_shader_parameter(&"depth_available", 0.0 if RenderingServer.get_current_rendering_method() == "dummy" else 1.0)
