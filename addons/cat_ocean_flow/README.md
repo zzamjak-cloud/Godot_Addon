@@ -2,6 +2,10 @@
 
 필요: `cat_core >= 1.0.0` · Godot 4.7+ · GDScript
 
+![overview](../../docs/media/cat_ocean_flow/08_river.gif)
+
+기능별 시연 영상과 사용법: **[기능 소개 페이지](https://zzamjak-cloud.github.io/Godot_Addon/cat_ocean_flow/)**
+
 Unity URP용 OceanFlow 패키지를 Godot으로 옮긴 카툰 스타일 3D 물 애드온입니다.
 바다와 강을 같은 셰이더로 그리며, 접경 포말·깊이 색·셀 거품·노이즈 난류·Gerstner 파도·셀 톤 하이라이트·UV 흐름을 제공합니다.
 
@@ -66,6 +70,8 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 
 ## 흐름 (CatFlowChannel)
 
+![flow channel](../../docs/media/cat_ocean_flow/07_flow_channel.gif)
+
 채널 하나가 노이즈 UV 레이어 하나에 대응합니다. 채널 0은 접경 포말, 채널 1은 수면 셀 거품을 흘립니다.
 
 | 속성 | 설명 |
@@ -80,6 +86,9 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 채널과 곡선은 `resource_local_to_scene` + 복제 시 항상 복사(`PROPERTY_USAGE_ALWAYS_DUPLICATE`)라서 노드를 복제(Ctrl+D)해도 공유되지 않습니다.
 
 ## 셰이더 기능
+
+![shore foam](../../docs/media/cat_ocean_flow/01_shore_foam.gif) ![depth color](../../docs/media/cat_ocean_flow/02_depth_color.gif) ![cell foam](../../docs/media/cat_ocean_flow/03_cell_foam.gif)
+![waves](../../docs/media/cat_ocean_flow/05_waves.gif) ![highlight](../../docs/media/cat_ocean_flow/06_highlight.gif)
 
 | 토글 | define | 내용 |
 |---|---|---|
@@ -99,6 +108,8 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 
 ## 노이즈 난류
 
+![noise churn](../../docs/media/cat_ocean_flow/04_noise_churn.gif)
+
 노이즈를 UV 오프셋만으로 흘리면 그물망 무늬가 통째로 미끄러집니다. 난류는 반주기 엇갈린 두 위상 A·B로 샘플해 교차 페이드하며, 각 위상은 사이클마다 다른 위치·회전으로 다시 태어납니다. 위상의 사이클 인덱스가 바뀌는 순간 그 위상의 가중치가 정확히 0이라 전환에서 튀지 않습니다.
 
 | 속성 | 기본 | 내용 |
@@ -111,6 +122,8 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 위상 인덱스·해시·회전은 프레임 상수라 GDScript가 계산해 uniform 5개로 올립니다(`compute_churn_phase()`, 채널 1은 0.37 사이클 어긋남). 셋을 모두 0으로 두면 단순 스크롤과 같습니다.
 
 ## 큰 바다 구성 (카메라 추적 패치 + 구멍)
+
+![horizon](../../docs/media/cat_ocean_flow/09_horizon.gif)
 
 균일 그리드 하나로 큰 바다를 덮을 수 없으므로 두 장을 씁니다. **바다 세트 만들기**가 만드는 구성:
 
@@ -138,6 +151,8 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 동기화는 값이 바뀐 다음 프레임에 한 번만 돌아 매 프레임 비용이 없습니다. 먼 바다의 크기를 바꿔도 타일링과 구멍이 다시 계산됩니다.
 
 ## 긴 강 구성 (이어 붙이기)
+
+![river](../../docs/media/cat_ocean_flow/08_river.gif)
 
 `length_samples` 상한이 512라 긴 강은 여러 `CatOceanFlowRiver`로 나눠 이어 붙입니다. **강 세트 만들기**는 앞 구간의 경로 끝점에 뒤 구간을 놓고 그 진행 방향으로 돌려 연결합니다(`create_river_set()`).
 
@@ -197,6 +212,10 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 | `tests/cat_ocean_flow/test_ocean_flow.gd` | 헤드리스 로직 검증(흐름·난류·그리드·경로·리본·동기화·복제·저장) |
 | `tests/cat_ocean_flow/check_shader_variants.gd` | 창 모드: 32개 셰이더 조합 컴파일 확인 |
 | `tests/cat_ocean_flow/capture_3d.gd` | 창 모드: 3D 씬 PNG 캡처 |
+
+## 샘플 영상
+
+`docs/media/cat_ocean_flow/`에 기능별 MP4와 GIF가 있습니다. 다시 만들려면 `tools/record_cat_ocean_flow.sh [씬이름]`을 실행합니다(렌더러는 Forward+). 씬은 `demo/cat_ocean_flow/showcase/`에 있습니다.
 
 ## 원본(Unity)과의 차이
 

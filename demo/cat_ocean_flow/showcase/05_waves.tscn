@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://demo/cat_ocean_flow/showcase/05_waves.gd" id="1"]
+
+[node name="Showcase05" type="Node3D"]
+script = ExtResource("1")

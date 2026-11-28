@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Godot 4.7+ 카툰 바다·강 물 표현 애드온 — 접경 포말, 깊이 색, 셀 거품, 난류, 파도, 하이라이트. 기능별 시연 영상과 사용법.">
+<meta property="og:title" content="CAT Ocean Flow — Godot 카툰 바다·강 애드온">
+<meta property="og:description" content="포말·깊이 색·셀 거품·파도를 한 셰이더로. Unity OceanFlow를 Godot으로 옮긴 MIT 애드온.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://zzamjak-cloud.github.io/Godot_Addon/cat_ocean_flow/og.png">
+<meta property="og:url" content="https://zzamjak-cloud.github.io/Godot_Addon/cat_ocean_flow/">
+<meta name="twitter:card" content="summary_large_image">
+<style>*,*::before,*::after{box-sizing:border-box}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>CAT Ocean Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* 레이아웃: 게임 화면 같은 짙은 남색 무대 위에, 기능마다 "영상 + 설명 카드"를 좌우로 놓고 폰에서는 세로로 쌓는다. 단일 다크 룩(영상 배경과 맞춤). */
+:root {
+  --stage: #161a26;
+  --panel: #1f2434;
+  --panel-2: #262c3f;
+  --line: #333a52;
+  --ink: #eef0f7;
+  --ink-soft: #a9b0c6;
+  --amber: #ffb13b;
+  --amber-ink: #1a1306;
+  --sky: #8fd3ff;
+  --f-display: "Black Han Sans", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --f-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 14px;
+  color-scheme: dark;
+}
+html { background: var(--stage); }
+body { background: var(--stage); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.7; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--stage); }
+a { color: var(--sky); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* 히어로 */
+.hero { padding-block: 56px 40px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 40px; align-items: center; }
+.eyebrow { font-family: var(--f-mono); font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--amber); margin: 0 0 14px; }
+.hero h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(44px, 7vw, 76px); line-height: 1.02; margin: 0 0 18px; letter-spacing: -.01em; text-wrap: balance;
+  text-shadow: 0 0 0 transparent, 3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 28px rgba(255,177,59,.35); }
+.hero h1 .hl { color: var(--amber); }
+.hero p.lead { color: var(--ink-soft); font-size: 17px; max-width: 34em; margin: 0 0 22px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; padding: 0; list-style: none; }
+.meta li { font-family: var(--f-mono); font-size: 12.5px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft); }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; font-weight: 700; font-size: 15px; text-decoration: none; }
+.btn.primary { background: var(--amber); color: var(--amber-ink); }
+.btn.ghost { border: 1px solid var(--line); color: var(--ink); }
+.hero-video { border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: #000; box-shadow: 0 30px 60px -30px rgba(0,0,0,.8); }
+video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; max-width: 100%; background: #10131c; }
+
+/* 목차 */
+.toc { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--stage) 92%, transparent); backdrop-filter: blur(8px); border-block: 1px solid var(--line); }
+.toc .wrap { display: flex; gap: 6px; overflow-x: auto; padding-block: 10px; scrollbar-width: none; }
+.toc a { flex: none; font-size: 14px; color: var(--ink-soft); text-decoration: none; padding: 5px 12px; border-radius: 999px; }
+.toc a:hover { color: var(--ink); background: var(--panel); }
+.toc a.group { color: var(--amber); font-weight: 700; }
+
+/* 그룹 + 기능 */
+main { padding-block: 8px 40px; }
+.group-head { padding-block: 56px 8px; display: grid; gap: 6px; }
+.group-head h2 { font-family: var(--f-display); font-weight: 400; font-size: clamp(30px, 4.4vw, 42px); margin: 0; line-height: 1.15; }
+.group-head p { color: var(--ink-soft); margin: 0; max-width: 46em; }
+.feature { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; align-items: start; padding-block: 28px; border-top: 1px solid var(--line); scroll-margin-top: 64px; }
+.feature:first-of-type { border-top: 0; }
+.feature .media { border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: #000; }
+.feature h3 { font-size: 22px; margin: 0 0 4px; line-height: 1.35; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.feature h3 code { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--sky); background: var(--panel); padding: 2px 8px; border-radius: 6px; }
+.feature .desc { color: var(--ink-soft); margin: 0 0 14px; }
+.props { width: 100%; border-collapse: collapse; font-size: 14px; margin: 0 0 14px; }
+.props th, .props td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.props th { font-family: var(--f-mono); font-weight: 600; color: var(--ink); white-space: nowrap; font-size: 13px; }
+.props td { color: var(--ink-soft); }
+.table-scroll { overflow-x: auto; }
+pre { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-family: var(--f-mono); font-size: 13px; line-height: 1.6; color: var(--ink); }
+pre .k { color: #ff9e7a; } pre .s { color: #b8e986; } pre .c { color: #7c849c; } pre .f { color: var(--sky); }
+.note { font-size: 13.5px; color: var(--ink-soft); margin: 10px 0 0; padding-left: 12px; border-left: 2px solid var(--line); }
+
+/* 설치 · 차이 */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding-block: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 22px; min-width: 0; }
+.box h3 { margin: 0 0 10px; font-size: 19px; }
+.box ul { margin: 0; padding-left: 1.1em; color: var(--ink-soft); }
+.box li + li { margin-top: 6px; }
+.box p { color: var(--ink-soft); margin: 0 0 12px; }
+.copy { margin-top: 10px; font: 600 13px var(--f-body); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.map { width: 100%; border-collapse: collapse; font-size: 14px; }
+.map td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.map td:first-child { font-family: var(--f-mono); color: var(--ink-soft); font-size: 13px; }
+.map td:last-child { font-family: var(--f-mono); color: var(--sky); font-size: 13px; }
+footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var(--ink-soft); font-size: 14px; }
+
+@media (max-width: 860px) {
+  .hero, .feature, .split { grid-template-columns: minmax(0, 1fr); }
+  .hero { padding-block: 32px 28px; gap: 24px; }
+  .feature { gap: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+html { scroll-behavior: smooth; }
+</style>
+</head>
+<body>
+
+<header class="wrap hero">
+  <div>
+    <p class="eyebrow">Godot 4.7+ Addon · GDScript · MIT</p>
+    <h1>CAT <span class="hl">Ocean Flow</span></h1>
+    <p class="lead">Godot 3D에서 카툰 스타일 바다와 강을 그리는 애드온입니다. 물가 포말, 깊이 색, 셀 거품, 난류, Gerstner 파도, 셀 톤 하이라이트를 같은 셰이더로 켜고 끕니다. Unity URP용 OceanFlow를 Godot으로 옮겼습니다.</p>
+    <ul class="meta">
+      <li>바다·강 노드 2종</li>
+      <li>기능별 셰이더 조합</li>
+      <li>수평선 바다 세트</li>
+      <li>Forward+ · Mobile 지원</li>
+    </ul>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/zzamjak-cloud/Godot_Addon" target="_blank" rel="noopener">GitHub에서 받기</a>
+      <a class="btn ghost" href="#install">설치 방법</a>
+    </div>
+  </div>
+  <div class="hero-video">
+    <video src="../media/cat_ocean_flow/08_river.mp4" autoplay muted loop playsinline preload="auto" aria-label="굽이치는 강을 따라 카메라가 이동하는 시연 영상"></video>
+  </div>
+</header>
+
+<nav class="toc" aria-label="기능 목차">
+  <div class="wrap">
+    <a class="group" href="#shore">물가와 색</a>
+    <a href="#shore-foam">접경 포말</a><a href="#depth-color">깊이 색</a>
+    <a class="group" href="#surface">수면 무늬</a>
+    <a href="#cell-foam">셀 거품</a><a href="#noise-churn">노이즈 난류</a><a href="#flow-channel">흐름 채널</a>
+    <a class="group" href="#wave">파동과 빛</a>
+    <a href="#waves">파동</a><a href="#highlight">하이라이트</a>
+    <a class="group" href="#place">바다와 강</a>
+    <a href="#river">강</a><a href="#horizon">수평선</a>
+    <a class="group" href="#install">설치</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section id="shore" aria-labelledby="shore-h">
+    <div class="group-head">
+      <h2 id="shore-h">물가와 색</h2>
+      <p>물 아래에 지형(불투명 메쉬)이 있으면 씬 깊이와 수면 깊이의 차로 얕은 곳을 알아냅니다. 얕을수록 흰 포말과 옅은 색, 깊을수록 짙은 색으로 변합니다.</p>
+    </div>
+
+    <article class="feature" id="shore-foam">
+      <div class="media"><video src="../media/cat_ocean_flow/01_shore_foam.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="포말 두께와 경계값이 변하는 시연"></video></div>
+      <div>
+        <h3>접경 포말 <code>shore_foam_enabled</code></h3>
+        <p class="desc">물과 지형이 만나는 곳에 흰 물결 띠를 그립니다. 두께는 수중 깊이로 정하고, 노이즈로 가장자리를 일렁이게 합니다. 포말 노이즈는 <code>channel0</code>이 흘립니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>foam_distance</th><td>포말 띠 두께, 수중 깊이 기준 (기본 0.6)</td></tr>
+          <tr><th>foam_cutoff</th><td>노이즈 경계값 — 높을수록 포말이 줄어듭니다 (기본 0.6)</td></tr>
+          <tr><th>foam_softness / foam_noise_amount</th><td>가장자리 부드러움 / 노이즈 세기</td></tr>
+          <tr><th>foam_fade_start / end</th><td>먼 물가의 깜빡임을 줄이려고 포말을 지우는 거리 (기본 0 ~ 300 m)</td></tr>
+        </table></div>
+<pre>ocean.foam_distance = 0.8
+ocean.foam_cutoff = 0.5
+ocean.channel0.speed = 0.1   # 포말 노이즈 흐름</pre>
+        <p class="note">포말 띠 두께는 시선 각도에 의존합니다. 물가 경사가 시선보다 급하면 포말이 사라집니다.</p>
+      </div>
+    </article>
+    <article class="feature" id="depth-color">
+      <div class="media"><video src="../media/cat_ocean_flow/02_depth_color.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="깊이 페이드 거리와 색이 바뀌는 시연"></video></div>
+      <div>
+        <h3>깊이 색 <code>depth_fade_distance</code></h3>
+        <p class="desc">수면 아래 깊이에 따라 얕은 색에서 깊은 색으로 섞고 알파도 함께 바꿉니다. 거리를 줄이면 물가에서 금방 짙어지고, 늘리면 넓게 옅은 물이 퍼집니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>shallow_color / deep_color</th><td>얕은 곳 / 깊은 곳 색</td></tr>
+          <tr><th>shallow_alpha / deep_alpha</th><td>두 곳의 투명도 (기본 0.5 / 0.95)</td></tr>
+          <tr><th>depth_fade_distance</th><td>얕은 색에서 깊은 색으로 넘어가는 수중 거리 (기본 3.0)</td></tr>
+        </table></div>
+<pre>ocean.shallow_color = Color(0.45, 0.90, 0.92)
+ocean.deep_color = Color(0.06, 0.28, 0.55)
+ocean.depth_fade_distance = 3.0</pre>
+        <p class="note">직교(Orthographic) 카메라에서도 동작합니다. 원본은 원근 카메라 전용이었습니다.</p>
+      </div>
+    </article>
+  </section>
+
+  <section id="surface" aria-labelledby="surface-h">
+    <div class="group-head">
+      <h2 id="surface-h">수면 무늬</h2>
+      <p>수면 노이즈 텍스처 하나를 두 레이어로 흘려 셀 거품을 만듭니다. 난류와 흐름 채널로 무늬가 어떻게 움직일지 정합니다.</p>
+    </div>
+
+    <article class="feature" id="cell-foam">
+      <div class="media"><video src="../media/cat_ocean_flow/03_cell_foam.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="경계값과 세기가 변하는 셀 거품 시연"></video></div>
+      <div>
+        <h3>셀 거품 <code>cell_foam_enabled</code></h3>
+        <p class="desc">흐르는 노이즈를 단계화해 만화처럼 또렷한 거품 무늬를 만듭니다. 경계값을 낮추면 거품이 넓어지고, 세기는 수면에 얹히는 흰색의 진하기입니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>cell_cutoff</th><td>노이즈 경계값 0~1 — 낮을수록 거품이 많음 (기본 0.72)</td></tr>
+          <tr><th>cell_softness</th><td>경계 부드러움 (기본 0.03)</td></tr>
+          <tr><th>cell_intensity</th><td>거품 세기 (기본 0.5)</td></tr>
+          <tr><th>cell_color</th><td>거품 색</td></tr>
+        </table></div>
+<pre>ocean.cell_cutoff = 0.6
+ocean.cell_intensity = 0.8</pre>
+      </div>
+    </article>
+    <article class="feature" id="noise-churn">
+      <div class="media"><video src="../media/cat_ocean_flow/04_noise_churn.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="난류를 끔, 켬, 강하게 바꿔 비교하는 시연"></video></div>
+      <div>
+        <h3>노이즈 난류 <code>noise_churn_enabled</code></h3>
+        <p class="desc">노이즈를 UV로만 흘리면 그물망 무늬가 통째로 미끄러집니다. 난류는 반주기 엇갈린 두 위상을 교차 페이드해 무늬가 태어나고 사라지게 하므로 실제 물결처럼 보입니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>churn_speed</th><td>초당 재배치 사이클 수 (기본 0.12)</td></tr>
+          <tr><th>churn_jitter</th><td>사이클마다 옮겨 앉는 거리 (기본 0.5)</td></tr>
+          <tr><th>churn_warp</th><td>UV를 비트는 양 (기본 0.06)</td></tr>
+          <tr><th>churn_rotation</th><td>사이클마다 돌아가는 각도 폭, 라디안 (기본 0.6)</td></tr>
+        </table></div>
+<pre>ocean.noise_churn_enabled = true
+ocean.churn_speed = 0.5</pre>
+        <p class="note">셋을 모두 0으로 두면 단순 스크롤과 같습니다.</p>
+      </div>
+    </article>
+    <article class="feature" id="flow-channel">
+      <div class="media"><video src="../media/cat_ocean_flow/07_flow_channel.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="Loop와 PingPong, 이징을 바꿔 보는 시연"></video></div>
+      <div>
+        <h3>흐름 채널 <code>CatFlowChannel</code></h3>
+        <p class="desc">채널 하나가 노이즈 UV 레이어 하나의 움직임을 정합니다. 채널 0은 접경 포말, 채널 1은 수면 셀 거품을 흘립니다. 이징은 <code>CatEase</code> 31종이나 <code>Curve</code>를 씁니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>mode</th><td>LOOP: 한 방향 무한 / PING_PONG: range 폭을 왕복</td></tr>
+          <tr><th>direction / speed</th><td>방향 / Loop는 초당 UV 이동량, PingPong은 1왕복 초</td></tr>
+          <tr><th>range</th><td>PingPong 왕복 폭 (UV)</td></tr>
+          <tr><th>ease / custom_curve</th><td>CatEase.Type 또는 EASE_CUSTOM + Curve</td></tr>
+          <tr><th>tiling</th><td>레이어 UV 타일링</td></tr>
+        </table></div>
+<pre>var ch := ocean.channel1
+ch.mode = CatFlowChannel.Mode.PING_PONG
+ch.range = 0.3
+ch.speed = 2.0
+ch.ease = CatEase.Type.OUT_BOUNCE</pre>
+        <p class="note">노드를 복제해도 채널은 공유되지 않습니다.</p>
+      </div>
+    </article>
+  </section>
+
+  <section id="wave" aria-labelledby="wave-h">
+    <div class="group-head">
+      <h2 id="wave-h">파동과 빛</h2>
+      <p>수면 움직임은 정점 셰이더(GPU)가 맡아 CPU 비용이 없습니다. 켠 기능만 셰이더에 들어갑니다.</p>
+    </div>
+
+    <article class="feature" id="waves">
+      <div class="media"><video src="../media/cat_ocean_flow/05_waves.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="파동을 끄고 켜고 가파르게 하는 시연"></video></div>
+      <div>
+        <h3>파동 <code>wave_enabled</code></h3>
+        <p class="desc">Gerstner 파 2개에 잔물결을 더하고 법선은 해석적으로 구합니다. 파동 값은 방향 xy, 가파름 z, 파장 w를 한 Vector4에 담습니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>wave_a / wave_b</th><td>Gerstner 파 (방향 xy, 가파름 z, 파장 w). 기본 A = (1, 0, 0.25, 8), B = (0.7, 0.7, 0.15, 4)</td></tr>
+          <tr><th>ripple</th><td>잔물결 (진폭 x, 주파수 y, 속도 z). 기본 (0.04, 3, 1.5)</td></tr>
+          <tr><th>wave_edge_fade</th><td>패치 가장자리에서 파도를 줄이는 비율 (이음매 보호)</td></tr>
+        </table></div>
+<pre>ocean.wave_a = Vector4(1, 0, 0.4, 8)
+ocean.ripple.x = 0.06</pre>
+        <p class="note">가파름 합이 1을 넘으면 수면이 접힙니다. 파장은 정점 간격의 4배 이상이어야 파도로 보입니다.</p>
+      </div>
+    </article>
+    <article class="feature" id="highlight">
+      <div class="media"><video src="../media/cat_ocean_flow/06_highlight.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="태양 각도와 경계값을 바꾸는 시연"></video></div>
+      <div>
+        <h3>하이라이트 <code>highlight_enabled</code></h3>
+        <p class="desc">메인 라이트 방향으로 셀 톤 반짝임을 그립니다. 법선이 빛을 반사하는 곳만 흰색으로 끊어 그려 만화 같은 윤슬이 됩니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>highlight_cutoff</th><td>반짝임 경계 — 낮을수록 넓음 (기본 0.5)</td></tr>
+          <tr><th>highlight_power</th><td>집중도 (기본 64)</td></tr>
+          <tr><th>highlight_intensity</th><td>세기 (기본 0.8)</td></tr>
+          <tr><th>main_light</th><td>빛 지정. 비우면 씬의 첫 DirectionalLight3D</td></tr>
+        </table></div>
+<pre>ocean.highlight_cutoff = 0.7
+ocean.main_light = $Sun</pre>
+      </div>
+    </article>
+  </section>
+
+  <section id="place" aria-labelledby="place-h">
+    <div class="group-head">
+      <h2 id="place-h">바다와 강</h2>
+      <p>같은 셰이더로 넓은 바다와 굽이치는 강을 모두 그립니다.</p>
+    </div>
+
+    <article class="feature" id="river">
+      <div class="media"><video src="../media/cat_ocean_flow/08_river.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="경로를 따라 흐르며 폭이 변하는 강 시연"></video></div>
+      <div>
+        <h3>강 <code>CatOceanFlowRiver</code></h3>
+        <p class="desc">Curve3D 경로를 따라 리본 메쉬를 만들고 폭 곡선으로 위치마다 폭을 바꿉니다. 에디터에서는 자식 <code>EditPath</code>의 기즈모로 점과 핸들을 옮기면 물길이 따라옵니다. 긴 강은 <code>next_river</code>로 이어 붙입니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>curve</th><td>Curve3D 경로 (강 노드 로컬 좌표)</td></tr>
+          <tr><th>width / width_curve</th><td>기준 폭 / 경로 위치별 폭 배율 Curve</td></tr>
+          <tr><th>length_samples / width_segments</th><td>길이·폭 방향 분할 수 (기본 64 / 4)</td></tr>
+          <tr><th>uv_length_scale</th><td>UV 한 바퀴당 길이 m (기본 8)</td></tr>
+          <tr><th>next_river</th><td>뒤 구간 동기화 — 시작 v가 이음매에서 이어짐</td></tr>
+        </table></div>
+<pre>var river := CatOceanFlowRiver.new()
+river.width = 6.0
+river.curve.add_point(Vector3(0, 0, 30), Vector3(0, 0, -4), Vector3(0, 0, 4))
+add_child(river)</pre>
+        <p class="note">length_samples 상한이 512라 아주 긴 강은 여러 노드로 나눕니다.</p>
+      </div>
+    </article>
+    <article class="feature" id="horizon">
+      <div class="media"><video src="../media/cat_ocean_flow/09_horizon.mp4#t=0.1" muted loop playsinline preload="metadata" aria-label="카메라가 이동하며 근거리 패치가 따라오는 수평선 시연"></video></div>
+      <div>
+        <h3>수평선 <code>create_ocean_set()</code></h3>
+        <p class="desc">균일 그리드 하나로는 수평선까지 덮을 수 없어 두 장을 씁니다. 촘촘한 근거리 패치가 카메라 시선이 수면과 만나는 점을 따라다니고, 1000 m 먼 바다가 그 아래를 채웁니다. 근거리 패치만 조정하면 먼 바다가 따라옵니다.</p>
+        <div class="table-scroll"><table class="props">
+          <tr><th>follow_camera</th><td>실행 중 뷰포트 카메라를 따라 이동 (기본 꺼짐)</td></tr>
+          <tr><th>hole_size</th><td>근거리 패치 자리를 먼 바다에 뚫는 구멍</td></tr>
+          <tr><th>far_surface</th><td>먼 바다 동기화 대상</td></tr>
+          <tr><th>wave_edge_fade</th><td>근거리 패치 가장자리 파도 페이드 (세트 기본 0.15)</td></tr>
+        </table></div>
+<pre>add_child(CatOceanFlowSurface.create_ocean_set())</pre>
+        <p class="note">배경이 단색이면 바다 끝이 직선으로 잘리므로 배경색과 같은 안개를 켜세요.</p>
+      </div>
+    </article>
+  </section>
+
+  <section id="install" aria-labelledby="install-h">
+    <div class="group-head">
+      <h2 id="install-h">설치</h2>
+      <p><code>addons/cat_core</code>와 <code>addons/cat_ocean_flow</code> 두 폴더만 있으면 됩니다. 노드는 class_name으로 등록되어 플러그인을 켜지 않아도 노드 추가 목록에 나타납니다. 깊이 기반 포말은 Forward+ 또는 Mobile 렌더러에서 확인하세요.</p>
+    </div>
+    <div class="split">
+      <div class="box">
+        <h3>폴더 복사</h3>
+        <p>GitHub 레포에서 두 폴더를 받아 프로젝트의 <code>addons/</code>에 넣습니다.</p>
+<pre>your_project/
+└─ addons/
+   ├─ cat_core/
+   └─ cat_ocean_flow/</pre>
+      </div>
+      <div class="box">
+        <h3>GodotEnv로 버전 고정</h3>
+        <p>프로젝트에 <code>addons.json</code>을 만들고 <code>godotenv addons install</code>을 실행합니다.</p>
+<pre id="addons-json">{
+  "path": "addons",
+  "addons": {
+    "cat_core": { "url": "https://github.com/zzamjak-cloud/Godot_Addon.git",
+      "checkout": "cat_core/v1.0.0", "subfolder": "addons/cat_core" },
+    "cat_ocean_flow": { "url": "https://github.com/zzamjak-cloud/Godot_Addon.git",
+      "checkout": "cat_ocean_flow/v1.0.0", "subfolder": "addons/cat_ocean_flow" }
+  }
+}</pre>
+        <button class="copy" id="copy-json" type="button">addons.json 복사</button>
+      </div>
+    </div>
+    <div class="split">
+      <div class="box">
+        <h3>Unity OceanFlow에서 옮겨 올 때</h3>
+        <div class="table-scroll"><table class="map">
+          <tr><td>OceanFlowSurface</td><td>CatOceanFlowSurface</td></tr>
+          <tr><td>OceanFlowRiver + OceanFlowPath</td><td>CatOceanFlowRiver</td></tr>
+          <tr><td>OceanFlowBase</td><td>CatOceanFlowBase</td></tr>
+          <tr><td>FlowChannel</td><td>CatFlowChannel</td></tr>
+          <tr><td>AnimationCurve</td><td>Curve</td></tr>
+          <tr><td>Ocean Set Make 메뉴</td><td>바다 세트 만들기</td></tr>
+        </table></div>
+      </div>
+      <div class="box">
+        <h3>원본과 다른 점</h3>
+        <ul>
+          <li>셰이더 키워드 대신 켠 기능 조합마다 코드로 만든 셰이더를 공유합니다(꺼진 기능은 셰이더에서 빠짐).</li>
+          <li>선형 깊이를 직접 구해서 직교 카메라에서도 포말과 깊이 색이 동작합니다.</li>
+          <li>물은 <code>unshaded</code>이고, 메인 라이트는 <code>main_light</code> 또는 씬의 첫 DirectionalLight3D를 씁니다.</li>
+          <li>60초 미리보기 버튼이 없습니다. <code>@tool</code> 노드가 에디터에서 바로 흐릅니다.</li>
+          <li>강 경로는 전용 편집기 대신 Godot <code>Path3D</code> 기즈모로 편집합니다.</li>
+          <li>이징은 <code>CatEase.Type</code>(1부터)이며 Custom은 32입니다.</li>
+          <li>카메라 추적 시 두 바다의 노이즈 이음매 어긋남을 UV 보정으로 고쳤습니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">CAT Ocean Flow 1.0.0 · Godot 4.7+ · MIT License · <a href="https://github.com/zzamjak-cloud/Godot_Addon" target="_blank" rel="noopener">github.com/zzamjak-cloud/Godot_Addon</a></div>
+</footer>
+
+<script>
+(() => {
+  // 화면에 보이는 영상만 재생해 휴대폰에서도 가볍게 유지한다.
+  const vids = document.querySelectorAll('main video');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if ('IntersectionObserver' in window && !reduce) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const v = e.target;
+        if (e.isIntersecting) { v.play().catch(() => {}); } else { v.pause(); }
+      }
+    }, { threshold: 0.35 });
+    vids.forEach((v) => io.observe(v));
+  } else {
+    vids.forEach((v) => { v.controls = true; });
+  }
+  if (reduce) {
+    const hero = document.querySelector('.hero-video video');
+    hero.removeAttribute('autoplay'); hero.pause(); hero.controls = true;
+  }
+  const btn = document.getElementById('copy-json');
+  btn.addEventListener('click', () => {
+    const text = document.getElementById('addons-json').textContent;
+    const done = () => { btn.textContent = '복사됨'; setTimeout(() => { btn.textContent = 'addons.json 복사'; }, 1600); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => selectFallback());
+    } else { selectFallback(); }
+    function selectFallback() {
+      const r = document.createRange(); r.selectNodeContents(document.getElementById('addons-json'));
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = '선택됨 — Ctrl/⌘+C';
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
