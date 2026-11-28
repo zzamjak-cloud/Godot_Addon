@@ -324,9 +324,12 @@ static func _insert_axis_line(axis: PackedFloat32Array, value: float, step: floa
 
 func _apply_all_properties() -> void:
 	super()
-	# 정점이 드문 먼 바다는 얼룩이 정점 사이에서 선형 보간돼 각진 무늬가 되므로 끈다(근거리 패치 가장자리도 중립으로 페이드)
-	if vertex_spacing > surface_breakup_scale * 0.25:
-		_material.set_shader_parameter(&"breakup_params", Vector4(0.0, 1.0 / surface_breakup_scale, 0.0, 0.0))
+	# 정점이 드문 먼 바다는 얼룩·법선 기울기가 정점 사이에서 선형 보간돼 각진 무늬가 되므로 끈다(근거리 패치 가장자리도 중립으로 페이드).
+	# 법선 기울기 무늬는 얼룩의 1/3 크기라 문턱도 1/3
+	var breakup := 0.0 if vertex_spacing > surface_breakup_scale * 0.25 else surface_breakup
+	var jitter := 0.0 if vertex_spacing > surface_breakup_scale * 0.25 / 3.0 else highlight_normal_jitter
+	if breakup != surface_breakup or jitter != highlight_normal_jitter:
+		_material.set_shader_parameter(&"breakup_params", Vector4(breakup, 1.0 / surface_breakup_scale, jitter, 0.0))
 
 
 func _apply_surface_properties(mat: ShaderMaterial) -> void:

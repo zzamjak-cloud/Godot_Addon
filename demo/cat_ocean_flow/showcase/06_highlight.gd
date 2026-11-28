@@ -16,4 +16,4 @@ func _step(_time: float) -> void:
 	var pitch := -14.0 - 36.0 * prog(0.0, 4.0) if first else -50.0
 	sun.rotation_degrees = Vector3(pitch, 0, 0)
 	ocean.highlight_cutoff = 0.8 if first else 0.85 - 0.6 * sin(prog(4.0, 8.0) * PI)
-	set_info("태양 각도=%.0f   highlight_cutoff=%.2f   highlight_intensity=%.1f" % [-pitch, ocean.highlight_cutoff, ocean.highlight_intensity])
+	set_info("태양 각도=%.0f   highlight_cutoff=%.2f   highlight_intensity=%.1f   normal_jitter=%.1f" % [-pitch, ocean.highlight_cutoff, ocean.highlight_intensity, ocean.highlight_normal_jitter])

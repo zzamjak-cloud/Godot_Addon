@@ -49,10 +49,10 @@ uniform vec3 light_direction = vec3(0.0, 1.0, 0.0);   // 빛 쪽을 향하는 �
 uniform vec3 light_color = vec3(1.0);                 // 색 × 에너지
 
 uniform vec4 wave_a = vec4(1.0, 0.0, 0.25, 8.0);   // xy = 방향, z = 가파름, w = 파장
-uniform vec4 wave_b = vec4(0.7, 0.7, 0.15, 4.0);
+uniform vec4 wave_b = vec4(0.34, 0.94, 0.15, 5.1);
 uniform vec4 ripple = vec4(0.04, 3.0, 1.5, 0.0);   // x = 진폭, y = 주파수, z = 속도
 uniform vec4 wave_variation = vec4(0.0, 0.0, 0.025, 0.0);   // x = 위상 지터, y = 너울 변화, z = 1 / 너울 크기
-uniform vec4 breakup_params = vec4(0.0, 0.04, 0.0, 0.0);    // x = 얼룩 세기, y = 1 / 얼룩 크기
+uniform vec4 breakup_params = vec4(0.0, 0.04, 0.0, 0.0);    // x = 얼룩 세기, y = 1 / 얼룩 크기, z = 하이라이트 법선 비틀기
 
 uniform float depth_available = 1.0;
 
@@ -60,7 +60,7 @@ varying vec4 v_uv01;
 varying vec3 v_world_pos;
 varying vec3 v_world_normal;
 #if defined(CELL_FOAM) || defined(SPECULAR)
-varying float v_breakup;   // 얼룩 -1(성김) ~ 1(빽빽함) × 세기. 0 이면 균일
+varying vec3 v_breakup;   // x = 얼룩 -1(성김) ~ 1(빽빽함) × 세기(0 이면 균일), yz = 하이라이트용 법선 기울기(월드 xz)
 #endif
 
 // 텍스처 없이 만드는 저주파 값(약 -1~1). 방향·주파수가 서로 무리수비라 반복 무늬가 드러나지 않는다.
@@ -125,7 +125,15 @@ void vertex() {
 	// 거품·반짝임 얼룩. 평균 밀도는 그대로 두고 구역마다 빽빽하거나 성기게 한다.
 	// 근거리 패치 가장자리에서는 0 으로 돌려 먼 바다와 이음매가 생기지 않게 한다
 	float breakup = smoothstep(-0.55, 0.55, cat_lowfreq(VERTEX.xz * breakup_params.y + vec2(TIME * 0.011, -TIME * 0.007), TIME * 0.2));
-	v_breakup = (breakup * 2.0 - 1.0) * breakup_params.x * cat_wave_edge_fade(UV);
+	float edge_fade = cat_wave_edge_fade(UV);
+	v_breakup = vec3((breakup * 2.0 - 1.0) * breakup_params.x * edge_fade, 0.0, 0.0);
+#ifdef SPECULAR
+	// 반사 경로가 파도 마루를 따라 평행 띠로 늘어서지 않게 하이라이트 법선만 저주파로 기울인다.
+	// 얼룩보다 3배 잘게 두 성분을 따로 만들고, 가장자리는 얼룩처럼 0 으로 돌린다
+	vec2 tilt_p = VERTEX.xz * breakup_params.y * 3.0;
+	v_breakup.yz = vec2(cat_lowfreq(tilt_p + vec2(5.3, 1.7), TIME * 0.25),
+			cat_lowfreq(tilt_p.yx + vec2(-3.1, 8.9), TIME * 0.25 + 3.0)) * (breakup_params.z * 0.3 * edge_fade);
+#endif
 #endif
 #ifdef WAVE_ON
 	vec3 tangent = vec3(1.0, 0.0, 0.0);
@@ -201,25 +209,25 @@ void fragment() {
 	float noise1 = texture(noise_texture, v_uv01.zw).r;
 #endif
 	// 얼룩이 성긴 곳은 문턱을 올려 거품 개수 자체가 줄고, 빽빽한 곳은 늘고 밝아진다
-	float cell_cut = cell_cutoff - v_breakup * 0.1;
+	float cell_cut = cell_cutoff - v_breakup.x * 0.1;
 	float cell = smoothstep(cell_cut - cell_softness, cell_cut + cell_softness, noise1);
-	color += cell_color.rgb * (cell * cell_intensity * (1.0 + v_breakup * 0.5));
+	color += cell_color.rgb * (cell * cell_intensity * (1.0 + v_breakup.x * 0.5));
 #endif
 
 	// --- 5. 셀 톤 하이라이트 ---
 #ifdef SPECULAR
 	vec3 view_dir = normalize(CAMERA_POSITION_WORLD - v_world_pos);
 	vec3 half_dir = normalize(light_direction + view_dir);
-	float ndoth = clamp(dot(normalize(v_world_normal), half_dir), 0.0, 1.0);
+	float ndoth = clamp(dot(normalize(v_world_normal + vec3(v_breakup.y, 0.0, v_breakup.z)), half_dir), 0.0, 1.0);
 #ifdef CELL_FOAM
 	// 평평한 수면에서 하이라이트가 면 전체에 켜지거나 꺼지지 않도록 수면 노이즈로 흔든다
 	// 얼룩이 성긴 곳일수록 더 크게 흔들어 반짝임이 띠로 이어지지 않고 흩어지게 한다
-	ndoth = clamp(ndoth + (noise1 - 0.5) * 0.12 * (1.0 - v_breakup * 0.5), 0.0, 1.0);
+	ndoth = clamp(ndoth + (noise1 - 0.5) * 0.12 * (1.0 - v_breakup.x * 0.5), 0.0, 1.0);
 #endif
 	// 얼룩이 성긴 곳은 경계를 올려 반짝임 개수 자체가 줄고, 빽빽한 곳은 는다
-	float spec_cut = highlight_cutoff - v_breakup * 0.15;
+	float spec_cut = highlight_cutoff - v_breakup.x * 0.15;
 	float spec = smoothstep(spec_cut - 0.02, spec_cut + 0.02, pow(ndoth, max(highlight_power, 1.0)));
-	color += highlight_color.rgb * light_color * (spec * highlight_intensity * (1.0 + v_breakup * 0.5));
+	color += highlight_color.rgb * light_color * (spec * highlight_intensity * (1.0 + v_breakup.x * 0.5));
 #endif
 
 	ALBEDO = color;

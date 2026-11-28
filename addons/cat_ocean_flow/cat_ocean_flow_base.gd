@@ -25,6 +25,7 @@ const SYNCED_APPEARANCE: Array[StringName] = [
 	&"surface_breakup", &"surface_breakup_scale",
 	&"wave_a", &"wave_b", &"ripple", &"wave_phase_jitter", &"swell_variation", &"swell_scale",
 	&"highlight_color", &"highlight_power", &"highlight_cutoff", &"highlight_intensity",
+	&"highlight_normal_jitter",
 	&"use_unscaled_time",
 ]
 
@@ -35,7 +36,7 @@ const _GROUP_TOGGLES := {
 	&"cell_foam_enabled": [&"cell_color", &"cell_cutoff", &"cell_softness", &"cell_intensity"],
 	&"wave_enabled": [&"wave_a", &"wave_b", &"ripple", &"wave_phase_jitter", &"swell_variation", &"swell_scale"],
 	&"highlight_enabled": [&"highlight_color", &"highlight_power", &"highlight_cutoff",
-		&"highlight_intensity", &"main_light"],
+		&"highlight_intensity", &"highlight_normal_jitter", &"main_light"],
 }
 
 static var _shader_cache: Dictionary = {}
@@ -230,8 +231,9 @@ static var _default_noise: Texture2D
 		if wave_a != v:
 			wave_a = v
 			_changed(true)
-## Gerstner 파 B: 방향 xy, 가파름 z, 파장 w
-@export var wave_b: Vector4 = Vector4(0.7, 0.7, 0.15, 4.0):
+## Gerstner 파 B: 방향 xy, 가파름 z, 파장 w.
+## A 와 방향이 많이 다르고(기본 약 70°) 파장비가 정수비가 아니어야 하이라이트가 평행 띠로 늘어서지 않는다
+@export var wave_b: Vector4 = Vector4(0.34, 0.94, 0.15, 5.1):
 	set(v):
 		if wave_b != v:
 			wave_b = v
@@ -290,6 +292,13 @@ static var _default_noise: Texture2D
 	set(v):
 		if highlight_intensity != v:
 			highlight_intensity = v
+			_changed()
+## 하이라이트 계산에서만 법선을 저주파로 기울여 반짝임이 파도 마루를 따라 평행 띠로 이어지지 않게 한다.
+## 0 이면 기울이지 않는다. 무늬 크기는 얼룩 크기의 1/3
+@export_range(0.0, 1.0) var highlight_normal_jitter: float = 0.7:
+	set(v):
+		if highlight_normal_jitter != v:
+			highlight_normal_jitter = v
 			_changed()
 ## 하이라이트 방향·색을 줄 빛. 비우면 씬에서 처음 찾은 보이는 DirectionalLight3D
 @export var main_light: DirectionalLight3D:
@@ -701,7 +710,7 @@ func _apply_all_properties() -> void:
 	m.set_shader_parameter(&"wave_b", wave_b)
 	m.set_shader_parameter(&"ripple", ripple)
 	m.set_shader_parameter(&"wave_variation", Vector4(wave_phase_jitter, swell_variation, 1.0 / swell_scale, 0.0))
-	m.set_shader_parameter(&"breakup_params", Vector4(surface_breakup, 1.0 / surface_breakup_scale, 0.0, 0.0))
+	m.set_shader_parameter(&"breakup_params", Vector4(surface_breakup, 1.0 / surface_breakup_scale, highlight_normal_jitter, 0.0))
 
 	# 4.7 의 세 렌더러 모두 hint_depth_texture 를 지원한다. 더미 렌더러(헤드리스)만 제외
 	m.set_shader_parameter(&"depth_available", 0.0 if RenderingServer.get_current_rendering_method() == "dummy" else 1.0)

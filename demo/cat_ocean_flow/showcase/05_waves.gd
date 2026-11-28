@@ -23,6 +23,6 @@ func _step(_time: float) -> void:
 	if s.index >= 4:
 		var k := prog(6.5, 8.0)
 		ocean.wave_a = Vector4(1, 0, 0.25 + 0.2 * k, 8.0)
-		ocean.wave_b = Vector4(0.7, 0.7, 0.15 + 0.15 * k, 4.0)
+		ocean.wave_b = Vector4(0.34, 0.94, 0.15 + 0.15 * k, 5.1)
 	var label: String = ["파동 끔", "Gerstner 2개", "+ 잔물결", "+ 변화", "가파르게"][s.index]
 	set_info("%s   steepness=%.2f   ripple=%.2f   phase_jitter=%.1f   swell_variation=%.1f" % [label, ocean.wave_a.z, ocean.ripple.x, ocean.wave_phase_jitter, ocean.swell_variation])

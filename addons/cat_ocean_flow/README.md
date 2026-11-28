@@ -61,8 +61,8 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 | 물 색 | `shallow_color`·`deep_color`, 알파, `depth_fade_distance` |
 | 접경 포말 | `shore_foam_enabled`, 색·두께(`foam_distance`)·경계·부드러움·노이즈 세기·알파·거리 페이드 + **포말 노이즈 흐름 `channel0`** |
 | 수면 노이즈 | `noise_texture` + **수면 노이즈 흐름 `channel1`** + 난류(`noise_churn_enabled` …) + 셀 거품(`cell_foam_enabled` …) + 얼룩(`surface_breakup` …) |
-| 파동 | `wave_enabled`, Gerstner 파 `wave_a`·`wave_b`(방향 xy, 가파름 z, 파장 w), 잔물결 `ripple`(진폭 x, 주파수 y, 속도 z) + 변화(`wave_phase_jitter`, `swell_variation`, `swell_scale`) |
-| 하이라이트 | `highlight_enabled`, 색·집중도·경계·세기, `main_light` |
+| 파동 | `wave_enabled`, Gerstner 파 `wave_a`·`wave_b`(방향 xy, 가파름 z, 파장 w. 기본 A = (1, 0, 0.25, 8), B = (0.34, 0.94, 0.15, 5.1)), 잔물결 `ripple`(진폭 x, 주파수 y, 속도 z) + 변화(`wave_phase_jitter`, `swell_variation`, `swell_scale`) |
+| 하이라이트 | `highlight_enabled`, 색·집중도·경계·세기, 법선 비틀기 `highlight_normal_jitter`, `main_light` |
 | 시간 | `use_unscaled_time` |
 | 먼 바다 동기화 / 다음 강 이어붙임 | `far_surface` / `next_river` |
 
@@ -196,17 +196,19 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 | `swell_scale` | 40 m (10 m) | 너울 묶음 한 덩어리의 크기 |
 | `surface_breakup` | 0.6 | 셀 거품·하이라이트의 개수와 밝기를 구역마다 늘리거나 줄입니다(평균 밀도는 유지). 하이라이트의 노이즈 흔들림도 구역마다 달라집니다 |
 | `surface_breakup_scale` | 25 m (8 m) | 얼룩 한 덩어리의 크기 |
+| `highlight_normal_jitter` | 0.7 | 하이라이트 계산에서만 법선을 저주파로 최대 약 0.3 × 값만큼 기울여, 반짝임이 파도 마루를 따라 평행 띠로 이어지지 않고 흩어지게 합니다. 무늬 크기는 `surface_breakup_scale`의 1/3. 수면 모양·셀 거품에는 영향이 없습니다 |
 
 - 값을 0으로 두면 그 효과는 이전과 완전히 같은 결과입니다. **잔물결은 예외**입니다: `sin(x)·cos(z)` 격자 대신 서로 다른 방향(약 37°·113°·-15°)·주파수비의 방향파 3개 합으로 바뀌어 격자 무늬가 생기지 않습니다. 가중치 합이 1이라 최대 진폭은 그대로 `ripple.x`입니다.
-- 얼룩은 정점 사이를 선형 보간하므로 정점이 드문 메쉬에서는 뭉툭해집니다. 그래서 정점 간격이 `surface_breakup_scale`의 1/4보다 큰 바다(예: 세트의 먼 바다 1000 m / 8분할)에는 얼룩을 올리지 않습니다. 근거리 패치는 `wave_edge_fade` 구간에서 얼룩이 0으로 돌아가 먼 바다와 이음매가 생기지 않습니다.
-- 얼룩은 셀 거품·하이라이트가 둘 다 꺼져 있으면 잠기고, 변화 값은 파도를 끄면 잠깁니다.
+- 얼룩은 정점 사이를 선형 보간하므로 정점이 드문 메쉬에서는 뭉툭해집니다. 그래서 정점 간격이 `surface_breakup_scale`의 1/4보다 큰 바다(예: 세트의 먼 바다 1000 m / 8분할)에는 얼룩을 올리지 않습니다. 법선 비틀기는 무늬가 1/3 크기라 정점 간격이 `surface_breakup_scale`의 1/12보다 크면 끕니다(세트 근거리 1 m 간격은 적용). 근거리 패치는 `wave_edge_fade` 구간에서 얼룩·법선 비틀기가 0으로 돌아가 먼 바다와 이음매가 생기지 않습니다.
+- 기본 파 B는 A와 방향이 약 70° 다르고 파장비(8 : 5.1)가 정수비가 아닙니다. 두 파가 비슷한 방향이거나 정수 파장비면 반사 경로가 평행 띠로 늘어서므로, 바꿀 때도 이 원칙을 지키세요(강 기본값도 같은 원칙: A (0, 1, 0.03, 3), B (0.94, 0.34, 0.02, 1.9)).
+- 얼룩은 셀 거품·하이라이트가 둘 다 꺼져 있으면 잠기고, 법선 비틀기는 하이라이트를 끄면, 변화 값은 파도를 끄면 잠깁니다.
 
 ## 성능
 
 - 프레임당 CPU: 노드 하나당 이징 2회 + `set_shader_parameter` 1회(오프셋), 난류가 켜져 있으면 5회, 하이라이트가 켜져 있으면 빛이 바뀐 프레임에만 2회. 메쉬는 파라미터가 바뀔 때만 다시 만들고 정점 움직임은 GPU가 맡습니다.
 - 흐름 오프셋은 업로드 전 `[0,1)`로 감아 장시간 실행해도 정밀도가 무너지지 않습니다.
 - 깊이 텍스처 페치는 항상 1회, 노이즈 페치는 포말·셀 거품 각 1회(난류를 켜면 각 2회). 랜덤성은 페치를 늘리지 않습니다.
-- 랜덤성 비용: 정점당 sin 약 15회(저주파 함수 4번 + 잔물결 3개), 프래그먼트는 얼룩 varying 1개로 곱셈·덧셈 몇 번(셀 거품 문턱·세기, 하이라이트 흔들림·경계·세기)만 늘어납니다.
+- 랜덤성 비용: 정점당 sin 약 21회(저주파 함수 6번 + 잔물결 3개, 그중 2번은 하이라이트를 켰을 때만), 프래그먼트는 얼룩 varying(vec3) 1개로 곱셈·덧셈 몇 번(셀 거품 문턱·세기, 하이라이트 법선 덧셈 2회·흔들림·경계·세기)만 늘어납니다.
 - 모바일에서는 물 하나당 정점 20,000개 이하를 권장합니다.
 
 ## 주의 사항
@@ -247,7 +249,7 @@ add_child(CatOceanFlowSurface.create_ocean_set())   # 근거리 + 먼 바다 세
 - **수치**: GDScript 실수는 64비트라 난류 해시(`sin(…) × 43758.5453`의 소수부)가 Unity float와 비트 단위로 같지는 않습니다. 성질(결정적, [0,1), 64 주기, 전환 시 가중치 0)은 같습니다.
 - **동기화 Undo**: 원본은 동기화 값 밀어넣기를 Undo에 기록했지만, 여기서는 동기화가 앞 노드 값에서 항상 다시 유도되므로 기록하지 않습니다.
 - **인스펙터**: 접힘 상태 저장(EditorPrefs)·채널 속도 곡선 그래프·"구동 중" 배지는 없습니다. 잠금은 읽기 전용 표시로, 경고는 노드 경고로 대신합니다.
-- **랜덤성 추가**: 원본에 없는 `wave_phase_jitter`·`swell_variation`·`swell_scale`·`surface_breakup`·`surface_breakup_scale`을 더했고, 잔물결을 `sin·cos` 격자에서 방향파 3개 합으로 바꿨습니다. 원본과 같은 모습이 필요하면 새 값을 0으로 두세요(잔물결 모양만 다릅니다).
+- **랜덤성 추가**: 원본에 없는 `wave_phase_jitter`·`swell_variation`·`swell_scale`·`surface_breakup`·`surface_breakup_scale`·`highlight_normal_jitter`를 더했고, 잔물결을 `sin·cos` 격자에서 방향파 3개 합으로 바꿨습니다. 원본과 같은 모습이 필요하면 새 값을 0으로 두세요(잔물결 모양만 다릅니다).
 - **16/32비트 인덱스 전환 경고 없음**: Godot `ArrayMesh`가 인덱스 크기를 알아서 고릅니다.
 
 ## 라이선스

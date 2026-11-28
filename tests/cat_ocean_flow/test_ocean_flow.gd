@@ -339,6 +339,10 @@ func _test_variation() -> void:
 	_near(s.swell_scale, 40.0, 1e-6, "너울 크기 기본값")
 	_near(s.surface_breakup, 0.6, 1e-6, "얼룩 세기 기본값")
 	_near(s.surface_breakup_scale, 25.0, 1e-6, "얼룩 크기 기본값")
+	_near(s.highlight_normal_jitter, 0.7, 1e-6, "하이라이트 법선 비틀기 기본값")
+	# 두 파가 비슷한 방향·정수 파장비면 하이라이트가 평행 띠로 늘어선다
+	_check(_wave_pair_breaks_bands(s.wave_a, s.wave_b), "바다 기본 파도 A·B 는 방향 60~110° 차·비정수 파장비")
+	_check(s.wave_a.z + s.wave_b.z < 1.0, "바다 기본 가파름 합 < 1")
 	# 변화 값은 진폭을 키우지 않으므로 컬링 여유는 그대로다
 	var pad := s.get_bounds_padding()
 	s.swell_variation = 1.0
@@ -356,12 +360,24 @@ func _test_variation() -> void:
 	_check(not _lock_of(s, &"surface_breakup"), "하이라이트만 켜져 있어도 얼룩 편집 가능")
 	s.highlight_enabled = false
 	_check(_lock_of(s, &"surface_breakup") and _lock_of(s, &"surface_breakup_scale"), "셀 거품·하이라이트 둘 다 끄면 얼룩 잠금")
+	_check(_lock_of(s, &"highlight_normal_jitter"), "하이라이트를 끄면 법선 비틀기 잠금")
+	s.highlight_enabled = true
+	_check(not _lock_of(s, &"highlight_normal_jitter"), "하이라이트를 켜면 법선 비틀기 편집 가능")
 	s.free()
 
 	var r := CatOceanFlowRiver.new()
 	_check(r.swell_scale < 40.0 and r.surface_breakup_scale < 25.0, "강은 너울·얼룩 크기가 바다보다 작다")
 	_check(r.wave_phase_jitter > 0.0 and r.swell_variation > 0.0, "강도 파동 변화가 켜져 있다")
+	_check(_wave_pair_breaks_bands(r.wave_a, r.wave_b), "강 기본 파도 A·B 도 방향 60~110° 차·비정수 파장비")
 	r.free()
+
+
+func _wave_pair_breaks_bands(a: Vector4, b: Vector4) -> bool:
+	var angle := rad_to_deg(Vector2(a.x, a.y).angle_to(Vector2(b.x, b.y)))
+	var ratio := maxf(a.w, b.w) / minf(a.w, b.w)
+	var off_integer := absf(ratio - roundf(ratio))
+	var off_half := absf(ratio * 2.0 - roundf(ratio * 2.0)) * 0.5
+	return absf(angle) >= 60.0 and absf(angle) <= 110.0 and off_integer > 0.1 and off_half > 0.03
 
 #endregion
 
@@ -374,6 +390,9 @@ func _test_far_sync() -> void:
 	var near := CatOceanFlowSurface.new()
 	near.size_x = 80
 	near.size_z = 80
+	# 바다 세트와 같은 1 m 간격이어야 법선 비틀기(얼룩 크기 1/3 무늬)가 살아 있다
+	near.subdiv_x = 80
+	near.subdiv_z = 80
 	near.uv_tiling = Vector2(1, 1)
 	near.follow_camera = true
 	near.foam_color = Color.RED
@@ -399,10 +418,15 @@ func _test_far_sync() -> void:
 	near.swell_scale = 55.0
 	near.surface_breakup = 0.25
 	near.surface_breakup_scale = 31.0
+	near.highlight_normal_jitter = 0.35
 	await process_frame
 	await process_frame
 	_check(far.wave_phase_jitter == 0.9 and far.swell_variation == 0.7 and far.swell_scale == 55.0, "파동 변화 값 복사")
 	_check(far.surface_breakup == 0.25 and far.surface_breakup_scale == 31.0, "얼룩 값 복사")
+	_near(far.highlight_normal_jitter, 0.35, 1e-6, "하이라이트 법선 비틀기 값 복사")
+	var far_jitter_lock := {name = &"highlight_normal_jitter", usage = PROPERTY_USAGE_DEFAULT}
+	far._validate_property(far_jitter_lock)
+	_check(far_jitter_lock.usage & PROPERTY_USAGE_READ_ONLY != 0, "먼 바다는 법선 비틀기 값이 잠긴다")
 	var far_lock := {name = &"surface_breakup", usage = PROPERTY_USAGE_DEFAULT}
 	far._validate_property(far_lock)
 	_check(far_lock.usage & PROPERTY_USAGE_READ_ONLY != 0, "먼 바다는 얼룩 값이 잠긴다")
@@ -412,6 +436,8 @@ func _test_far_sync() -> void:
 	var near_breakup: Vector4 = near.get_water_material().get_shader_parameter(&"breakup_params")
 	_near(near_breakup.x, 0.25, 1e-6, "근거리 바다는 얼룩 세기 그대로")
 	_near(near_breakup.y, 1.0 / 31.0, 1e-6, "얼룩 크기는 역수로 올린다")
+	_near(far_breakup.z, 0.0, 1e-6, "정점이 드문 먼 바다는 법선 비틀기 끔")
+	_near(near_breakup.z, 0.35, 1e-6, "근거리 바다는 법선 비틀기 그대로")
 	_check(far.is_driven(), "먼 바다는 구동 표시")
 	# 동기화가 한 번에 가라앉아 매 프레임 다시 돌지 않는다
 	await process_frame

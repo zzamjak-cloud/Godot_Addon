@@ -188,7 +188,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 ## 강에 맞는 파동 기본값. 바다의 큰 스웰 대신 잔물결이 주가 된다(진폭 합 약 0.03 m).
 func apply_river_wave_defaults() -> void:
 	wave_a = Vector4(0.0, 1.0, 0.03, 3.0)    # 진폭 ≈ 0.014 m
-	wave_b = Vector4(0.7, 0.7, 0.02, 2.0)    # 진폭 ≈ 0.006 m
+	wave_b = Vector4(0.94, 0.34, 0.02, 1.9)   # 진폭 ≈ 0.006 m. A 와 약 70°·무리수에 가까운 파장비
 	ripple = Vector4(0.012, 5.0, 2.5, 0.0)   # 진폭 0.012 m
 	# 강 폭이 수 m 라 너울·얼룩도 그만큼 잘게 둔다
 	wave_phase_jitter = 0.4
